@@ -1,0 +1,22 @@
+syntax = "proto3";
+
+package grpc;
+
+option go_package = "bootcampProject/grpc";
+
+service UserService {
+  rpc CreateUser (NewUser) returns (User) {}
+}
+
+message NewUser {
+  string pwd_hash = 1;
+  string name = 2;
+  int32 age = 3;
+}
+
+message User {
+  int32 id = 1;
+  string pwd_hash = 2;
+  string name = 3;
+  int32 age = 4;
+}
