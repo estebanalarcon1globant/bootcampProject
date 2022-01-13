@@ -14,7 +14,7 @@ type gRPCServer struct {
 }
 
 // NewUserGRPCServer initializes a new gRPC server
-func NewUserGRPCServer(svcEndpoints transport.UserEndpoints, logger log.Logger) pb.UserServiceServer {
+func NewUserGRPCServer(svcEndpoints transport.UserEndpointsGRPC, logger log.Logger) pb.UserServiceServer {
 	return &gRPCServer{
 		createUser: gt.NewServer(
 			svcEndpoints.CreateUser,

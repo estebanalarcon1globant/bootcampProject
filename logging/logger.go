@@ -2,7 +2,6 @@ package logging
 
 import (
 	"bootcampProject/users/domain"
-	"bootcampProject/users/service"
 	"context"
 	"github.com/go-kit/kit/log"
 	"time"
@@ -10,10 +9,10 @@ import (
 
 type middleware struct {
 	logger log.Logger
-	next   service.UserService
+	next   domain.UserService
 }
 
-func NewMiddleware(logger log.Logger, svc service.UserService) *middleware {
+func NewMiddleware(logger log.Logger, svc domain.UserService) *middleware {
 	return &middleware{
 		logger: logger,
 		next:   svc,

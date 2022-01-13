@@ -3,9 +3,8 @@ package main
 import (
 	"bootcampProject/database"
 	pb "bootcampProject/grpc"
-	"bootcampProject/logging"
-	"bootcampProject/users/implementation"
 	"bootcampProject/users/repository"
+	"bootcampProject/users/service"
 	"bootcampProject/users/transport"
 	transportGrpc "bootcampProject/users/transport/grpc"
 	transportHttp "bootcampProject/users/transport/http"
@@ -40,18 +39,37 @@ func main() {
 	level.Info(logger).Log("msg", "service started")
 	defer level.Info(logger).Log("msg", "service ended")
 
-	sqlDB, err := database.SetupDB()
+	err := database.SetupDB()
 	if err != nil {
 		panic(err)
 	}
-
+	sqlDB := database.GetConnection()
 	userRepo := repository.NewUserRepository(sqlDB, logger)
-	userSvc := implementation.NewUserService(userRepo, logger)
-	middleware := logging.NewMiddleware(logger, userSvc)
-	userSvc = middleware
-	endpoints := transport.MakeEndpoints(userSvc)
-	httpServer := transportHttp.NewUserHandler(endpoints, logger)
-	grpcServer := transportGrpc.NewUserGRPCServer(endpoints, logger)
+	userSvc := service.NewUserService(userRepo, logger)
+
+	//GRPC SERVER
+	endpointsGRPC := transport.MakeEndpointsGRPC(userSvc)
+	grpcServer := transportGrpc.NewUserGRPCServer(endpointsGRPC, logger)
+
+	grpcListener, err := net.Listen("tcp", ":50051")
+	if err != nil {
+		logger.Log("during", "Listen", "err", err)
+		os.Exit(1)
+	}
+
+	go func() {
+		baseServer := grpc.NewServer()
+		pb.RegisterUserServiceServer(baseServer, grpcServer)
+		level.Info(logger).Log("msg", "Server started successfully 🚀")
+		baseServer.Serve(grpcListener)
+	}()
+
+	//HTTP SERVER
+	//middleware := logging.NewMiddleware(logger, userSvc)
+	//userSvc = middleware
+	grpcClient := pb.NewGrpcClient()
+	endpointsHTTP := transport.MakeEndpointsHTTP(grpcClient)
+	httpServer := transportHttp.NewUserHTTPServer(endpointsHTTP, logger)
 
 	errs := make(chan error)
 	go func() {
@@ -67,19 +85,6 @@ func main() {
 			Handler: httpServer,
 		}
 		errs <- server.ListenAndServe()
-	}()
-
-	grpcListener, err := net.Listen("tcp", ":50051")
-	if err != nil {
-		logger.Log("during", "Listen", "err", err)
-		os.Exit(1)
-	}
-
-	go func() {
-		baseServer := grpc.NewServer()
-		pb.RegisterUserServiceServer(baseServer, grpcServer)
-		level.Info(logger).Log("msg", "Server started successfully 🚀")
-		baseServer.Serve(grpcListener)
 	}()
 
 	level.Error(logger).Log("exit", <-errs)

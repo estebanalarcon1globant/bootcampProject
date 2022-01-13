@@ -15,9 +15,9 @@ var (
 	ErrBadRouting = errors.New("bad routing")
 )
 
-// NewUserHandler wires Go kit endpoints to the HTTP transport.
-func NewUserHandler(
-	svcEndpoints transport.UserEndpoints, logger log.Logger) http.Handler {
+// NewUserHTTPServer wires Go kit endpoints to the HTTP transport.
+func NewUserHTTPServer(
+	svcEndpoints transport.UserEndpointsHTTP, logger log.Logger) http.Handler {
 	// set-up router and initialize http endpoints
 	r := mux.NewRouter()
 	// HTTP Post - /orders

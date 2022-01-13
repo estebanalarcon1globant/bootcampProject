@@ -14,26 +14,35 @@ const (
 	DB_PORT     = "3306"
 )
 
-var db *gorm.DB
+type DBHandler struct {
+	Conn *gorm.DB
+}
 
-func SetupDB() (*gorm.DB, error) {
-	db, err := getMySQLConnection()
+var dbHandler DBHandler
+
+func SetupDB() error {
+	var err error
+	dbHandler.Conn, err = getMySQLConnection()
 	if err != nil {
-		return db, err
+		return err
 	}
-	err = db.AutoMigrate(&domain.Users{})
+	err = dbHandler.Conn.AutoMigrate(&domain.Users{})
 	if err != nil {
-		return db, err
+		return err
 	}
-	return db, nil
+	return nil
 }
 
 func migrateTables() error {
-	return db.AutoMigrate(&domain.Users{})
+	return dbHandler.Conn.AutoMigrate(&domain.Users{})
 }
 
 func getMySQLConnection() (*gorm.DB, error) {
 	dsn := DB_USERNAME + ":" + DB_PASSWORD + "@tcp" + "(" + DB_HOST + ":" + DB_PORT + ")/" + DB_NAME + "?" + "parseTime=true&loc=Local"
 	db, err := gorm.Open(mysql.Open(dsn), &gorm.Config{})
 	return db, err
+}
+
+func GetConnection() DBHandler {
+	return dbHandler
 }
