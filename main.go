@@ -6,8 +6,6 @@ import (
 	"bootcampProject/users/repository"
 	"bootcampProject/users/service"
 	"bootcampProject/users/transport"
-	transportGrpc "bootcampProject/users/transport/grpc"
-	transportHttp "bootcampProject/users/transport/http"
 	"flag"
 	"fmt"
 	"github.com/go-kit/kit/log"
@@ -49,7 +47,7 @@ func main() {
 
 	//GRPC SERVER
 	endpointsGRPC := transport.MakeEndpointsGRPC(userSvc)
-	grpcServer := transportGrpc.NewUserGRPCServer(endpointsGRPC, logger)
+	grpcServer := transport.NewUserGRPCServer(endpointsGRPC, logger)
 
 	grpcListener, err := net.Listen("tcp", ":50051")
 	if err != nil {
@@ -65,11 +63,11 @@ func main() {
 	}()
 
 	//HTTP SERVER
-	//middleware := logging.NewMiddleware(logger, userSvc)
+	//middleware := middleware.NewMiddleware(logger, userSvc)
 	//userSvc = middleware
 	grpcClient := pb.NewGrpcClient()
 	endpointsHTTP := transport.MakeEndpointsHTTP(grpcClient)
-	httpServer := transportHttp.NewUserHTTPServer(endpointsHTTP, logger)
+	httpServer := transport.NewUserHTTPServer(endpointsHTTP, logger)
 
 	errs := make(chan error)
 	go func() {
