@@ -1,6 +1,7 @@
 package main
 
 import (
+	"bootcampProject/config"
 	"bootcampProject/database"
 	pb "bootcampProject/grpc"
 	"bootcampProject/users/repository"
@@ -37,7 +38,12 @@ func main() {
 	level.Info(logger).Log("msg", "service started")
 	defer level.Info(logger).Log("msg", "service ended")
 
-	err := database.SetupDB()
+	err := config.LoadConfiguration()
+	if err != nil {
+		logger.Log("during", "Load .env", "err", err)
+	}
+
+	err = database.SetupDB()
 	if err != nil {
 		panic(err)
 	}

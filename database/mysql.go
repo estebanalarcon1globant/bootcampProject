@@ -1,17 +1,12 @@
 package database
 
 import (
+	"bootcampProject/config"
 	"bootcampProject/users/domain"
+	"fmt"
 	"gorm.io/driver/mysql"
 	"gorm.io/gorm"
-)
-
-const (
-	DB_USERNAME = "root"
-	DB_PASSWORD = "globant12345"
-	DB_NAME     = "globant_db"
-	DB_HOST     = "127.0.0.1"
-	DB_PORT     = "3306"
+	"strconv"
 )
 
 type DBHandler struct {
@@ -38,7 +33,13 @@ func migrateTables() error {
 }
 
 func getMySQLConnection() (*gorm.DB, error) {
-	dsn := DB_USERNAME + ":" + DB_PASSWORD + "@tcp" + "(" + DB_HOST + ":" + DB_PORT + ")/" + DB_NAME + "?" + "parseTime=true&loc=Local"
+	dsn := config.GetSqlDBUsername() +
+		":" + config.GetSqlDBPass() +
+		"@tcp" + "(" + config.GetSqlDBHost() +
+		":" + strconv.Itoa(config.GetSqlDBPort()) + ")/" +
+		config.GetSqlDBDatabase() + "?" +
+		"parseTime=true&loc=Local"
+	fmt.Println(dsn)
 	db, err := gorm.Open(mysql.Open(dsn), &gorm.Config{})
 	return db, err
 }
