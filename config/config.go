@@ -9,6 +9,10 @@ import (
 )
 
 type config struct {
+	mySqlConfig mySqlConfig
+}
+
+type mySqlConfig struct {
 	sqlDBHost     string
 	sqlDBPort     int
 	sqlDBDatabase string
@@ -31,28 +35,28 @@ func LoadConfiguration() error {
 
 	errs := make([]string, 0)
 
-	c.sqlDBHost = os.Getenv("DB_HOST")
-	if c.sqlDBHost == "" {
+	c.mySqlConfig.sqlDBHost = os.Getenv("DB_HOST")
+	if c.mySqlConfig.sqlDBHost == "" {
 		errs = append(errs, "Error variable database.mysql.host from .env")
 	}
 
-	c.sqlDBPort, err = strconv.Atoi(os.Getenv("DB_PORT"))
+	c.mySqlConfig.sqlDBPort, err = strconv.Atoi(os.Getenv("DB_PORT"))
 	if err != nil {
 		errs = append(errs, "Error variable database.mysql.port from .env")
 	}
 
-	c.sqlDBDatabase = os.Getenv("DB_NAME")
-	if c.sqlDBDatabase == "" {
+	c.mySqlConfig.sqlDBDatabase = os.Getenv("DB_NAME")
+	if c.mySqlConfig.sqlDBDatabase == "" {
 		errs = append(errs, "Error variable database.mysql.database from .env")
 	}
 
-	c.sqlDBUsername = os.Getenv("DB_USER")
-	if c.sqlDBUsername == "" {
+	c.mySqlConfig.sqlDBUsername = os.Getenv("DB_USER")
+	if c.mySqlConfig.sqlDBUsername == "" {
 		errs = append(errs, "Error variable database.mysql.username from .env")
 	}
 
-	c.sqlDBPass = os.Getenv("DB_PASSWORD")
-	if c.sqlDBPass == "" {
+	c.mySqlConfig.sqlDBPass = os.Getenv("DB_PASSWORD")
+	if c.mySqlConfig.sqlDBPass == "" {
 		errs = append(errs, "Error variable database.mysql.pass from .env")
 	}
 
@@ -67,18 +71,18 @@ func LoadConfiguration() error {
 }
 
 func GetSqlDBHost() string {
-	return conf.sqlDBHost
+	return conf.mySqlConfig.sqlDBHost
 }
 
 func GetSqlDBPort() int {
-	return conf.sqlDBPort
+	return conf.mySqlConfig.sqlDBPort
 }
 func GetSqlDBDatabase() string {
-	return conf.sqlDBDatabase
+	return conf.mySqlConfig.sqlDBDatabase
 }
 func GetSqlDBUsername() string {
-	return conf.sqlDBUsername
+	return conf.mySqlConfig.sqlDBUsername
 }
 func GetSqlDBPass() string {
-	return conf.sqlDBPass
+	return conf.mySqlConfig.sqlDBPass
 }

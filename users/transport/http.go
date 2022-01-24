@@ -57,19 +57,16 @@ func encodeCreateUserHTTPResponse(_ context.Context, w http.ResponseWriter, resp
 
 func decodeGetUsersHTTPRequest(_ context.Context, r *http.Request) (request interface{}, err error) {
 
-	/*if e := json.NewDecoder(r.Body).Decode(&req); e != nil {
-		return nil, e
-	}*/
-	vars := mux.Vars(r)
+	vars := r.URL.Query()
 	var limit, offset int
-	if auxLimit, ok := vars["limit"]; !ok {
+	if auxLimit := vars.Get("limit"); auxLimit == "" {
 		limit = 100
 	} else {
 		limit, err = strconv.Atoi(auxLimit)
 	}
 
-	if auxOffset, ok := vars["offset"]; !ok {
-		limit = 0
+	if auxOffset := vars.Get("offset"); auxOffset == "" {
+		offset = 0
 	} else {
 		offset, err = strconv.Atoi(auxOffset)
 	}
