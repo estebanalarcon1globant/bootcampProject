@@ -5,12 +5,14 @@ import (
 	"bootcampProject/users/mocks"
 	"context"
 	"errors"
+	"github.com/go-kit/kit/log"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
+	"os"
 	"testing"
 )
 
-func TestUserService_CreateUser(t *testing.T) {
+func TestUserServiceLogging_CreateUser(t *testing.T) {
 	mockUser := domain.Users{
 		ID:      1,
 		PwdHash: "pass",
@@ -18,6 +20,8 @@ func TestUserService_CreateUser(t *testing.T) {
 		Age:     24,
 	}
 	mockUserRepo := new(mocks.UserRepoMock)
+	var logger log.Logger
+	logger = log.NewLogfmtLogger(os.Stderr)
 	idExpected := 1
 
 	t.Run("success", func(t *testing.T) {
@@ -27,6 +31,7 @@ func TestUserService_CreateUser(t *testing.T) {
 			Return(idExpected, nil).Once()
 
 		u := NewUserService(mockUserRepo)
+		u = NewUserServiceLogging(logger, u)
 
 		idGot, err := u.CreateUser(context.TODO(), tempMockUser)
 
@@ -44,6 +49,7 @@ func TestUserService_CreateUser(t *testing.T) {
 			Return(0, errorWant).Once()
 
 		u := NewUserService(mockUserRepo)
+		u = NewUserServiceLogging(logger, u)
 
 		_, errGot := u.CreateUser(context.TODO(), tempMockUser)
 
@@ -52,7 +58,7 @@ func TestUserService_CreateUser(t *testing.T) {
 	})
 }
 
-func TestUserService_GetUsers(t *testing.T) {
+func TestUserServiceLogging_GetUsers(t *testing.T) {
 	mockUsers := []domain.Users{
 		{ID: 1,
 			PwdHash: "pass",
@@ -68,12 +74,16 @@ func TestUserService_GetUsers(t *testing.T) {
 	mockUserRepo := new(mocks.UserRepoMock)
 	limit, offset := 5, 1
 
+	var logger log.Logger
+	logger = log.NewLogfmtLogger(os.Stderr)
+
 	t.Run("success", func(t *testing.T) {
 		//tempMockUser := mockUsers
 		mockUserRepo.On("GetUsers", mock.Anything, mock.AnythingOfType("int"), mock.AnythingOfType("int")).
 			Return(mockUsers, nil).Once()
 
 		u := NewUserService(mockUserRepo)
+		u = NewUserServiceLogging(logger, u)
 
 		usersGot, err := u.GetUsers(context.TODO(), limit, offset)
 
@@ -89,6 +99,7 @@ func TestUserService_GetUsers(t *testing.T) {
 			Return([]domain.Users{}, errorWant).Once()
 
 		u := NewUserService(mockUserRepo)
+		u = NewUserServiceLogging(logger, u)
 
 		_, errGot := u.GetUsers(context.TODO(), limit, offset)
 

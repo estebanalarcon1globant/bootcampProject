@@ -11,6 +11,7 @@ import (
 
 type gRPCServer struct {
 	createUser gt.Handler
+	getUsers   gt.Handler
 }
 
 var (
@@ -24,6 +25,12 @@ func NewUserGRPCServer(svcEndpoints UserEndpointsGRPC, _ log.Logger) pb.UserServ
 			svcEndpoints.CreateUser,
 			decodeCreateUserGRPCRequest,
 			encodeCreateUserGRPCResponse,
+		),
+		//TODO: endpoint getUsers
+		getUsers: gt.NewServer(
+			svcEndpoints.GetUsers,
+			decodeGetUsersGRPCRequest,
+			encodeGetUsersGRPCResponse,
 		),
 	}
 }
@@ -51,6 +58,46 @@ func encodeCreateUserGRPCResponse(_ context.Context, response interface{}) (inte
 	if resp, ok := response.(CreateUserResponse); ok {
 		return &pb.User{
 			Id: int32(resp.ID),
+		}, nil
+	}
+	return &pb.User{}, ErrBadRequest
+}
+
+//TODO
+func (s *gRPCServer) GetUsers(ctx context.Context, req *pb.GetUsersParams) (*pb.UserList, error) {
+	_, resp, err := s.getUsers.ServeGRPC(ctx, req)
+	if err != nil {
+		return nil, err
+	}
+	return resp.(*pb.UserList), nil
+}
+
+func decodeGetUsersGRPCRequest(_ context.Context, request interface{}) (interface{}, error) {
+	if req, ok := request.(*pb.GetUsersParams); ok {
+		return GetUsersRequest{
+			limit:  int(req.Limit),
+			offset: int(req.Offset),
+		}, nil
+	}
+	return GetUsersRequest{}, ErrBadRequest
+}
+
+func encodeGetUsersGRPCResponse(_ context.Context, response interface{}) (interface{}, error) {
+	if resp, ok := response.(GetUsersResponse); ok {
+		return &pb.UserList{
+			Users: func(users []domain.Users) []*pb.User {
+				var res []*pb.User
+				for _, user := range users {
+					temp := &pb.User{
+						Id:      int32(user.ID),
+						PwdHash: user.PwdHash,
+						Name:    user.Name,
+						Age:     int32(user.Age),
+					}
+					res = append(res, temp)
+				}
+				return res
+			}(resp.Users),
 		}, nil
 	}
 	return &pb.User{}, ErrBadRequest

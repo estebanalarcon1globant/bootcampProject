@@ -45,7 +45,7 @@ func TestDecodeCreateUserGRPCRequest(t *testing.T) {
 	})
 }
 
-func TestEncodeCreateUserGRPCRequest(t *testing.T) {
+func TestEncodeCreateUserGRPCResponse(t *testing.T) {
 	t.Run("success", func(t *testing.T) {
 		expectedId := 1
 		encodeIn := CreateUserResponse{
@@ -109,5 +109,82 @@ func TestGRPCServer_CreateUser(t *testing.T) {
 		_, errGot := grpcServer.CreateUser(context.TODO(), tempUserMock)
 		assert.EqualError(t, errGot, ErrTesting.Error())
 		userSvcMock.AssertExpectations(t)
+	})
+}
+
+func TestDecodeGetUsersRequest(t *testing.T) {
+	t.Run("success", func(t *testing.T) {
+		limit, offset := 10, 0
+		decodeIn := &pb.GetUsersParams{
+			Limit:  int32(limit),
+			Offset: int32(offset),
+		}
+		resWant := GetUsersRequest{
+			limit:  limit,
+			offset: offset,
+		}
+
+		resGot, errGot := decodeGetUsersGRPCRequest(context.TODO(), decodeIn)
+		assert.NoError(t, errGot)
+		assert.Equal(t, resWant, resGot)
+	})
+
+	t.Run("error on request", func(t *testing.T) {
+		decodeError := &pb.User{}
+		_, errGot := decodeGetUsersGRPCRequest(context.TODO(), decodeError)
+		assert.EqualError(t, errGot, ErrBadRequest.Error())
+	})
+}
+
+func TestEncodeGetUsersResponse(t *testing.T) {
+	t.Run("success", func(t *testing.T) {
+		encodeIn := GetUsersResponse{
+			Users: []domain.Users{
+				{
+					ID:      1,
+					PwdHash: "test1",
+					Name:    "nameTest1",
+					Age:     10,
+				},
+				{
+					ID:      2,
+					PwdHash: "test2",
+					Name:    "nameTest2",
+					Age:     10,
+				},
+			},
+			Err: nil,
+		}
+		resWant := &pb.UserList{
+			Users: []*pb.User{
+				{
+					Id:      int32(encodeIn.Users[0].ID),
+					PwdHash: encodeIn.Users[0].PwdHash,
+					Name:    encodeIn.Users[0].Name,
+					Age:     int32(encodeIn.Users[0].Age),
+				},
+				{
+					Id:      int32(encodeIn.Users[1].ID),
+					PwdHash: encodeIn.Users[1].PwdHash,
+					Name:    encodeIn.Users[1].Name,
+					Age:     int32(encodeIn.Users[1].Age),
+				},
+			},
+		}
+
+		resGot, errGot := encodeGetUsersGRPCResponse(context.TODO(), encodeIn)
+		//fmt.Println(resGot)
+		assert.NoError(t, errGot)
+		assert.ObjectsAreEqualValues(resWant, resGot)
+	})
+
+	t.Run("error on request", func(t *testing.T) {
+		encodeError := &pb.User{
+			PwdHash: "test",
+			Name:    "nameTest",
+			Age:     20,
+		}
+		_, errGot := encodeGetUsersGRPCResponse(context.TODO(), encodeError)
+		assert.EqualError(t, errGot, ErrBadRequest.Error())
 	})
 }

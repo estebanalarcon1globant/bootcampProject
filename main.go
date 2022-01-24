@@ -4,6 +4,8 @@ import (
 	"bootcampProject/config"
 	"bootcampProject/database"
 	pb "bootcampProject/grpc"
+	"bootcampProject/grpc/server"
+	"bootcampProject/users/domain"
 	"bootcampProject/users/repository"
 	"bootcampProject/users/service"
 	"bootcampProject/users/transport"
@@ -11,26 +13,31 @@ import (
 	"fmt"
 	"github.com/go-kit/kit/log"
 	"github.com/go-kit/kit/log/level"
-	"google.golang.org/grpc"
-	"net"
 	"net/http"
 	"os"
 	"os/signal"
 	"syscall"
 )
 
+const (
+	defaultHttpPort = ":8080"
+	defaultGrpcPort = ":50051"
+)
+
 func main() {
 	var (
-		httpAddr = flag.String("http.addr", ":8080", "HTTP listen address")
+		httpAddr = flag.String("http.addr", defaultHttpPort, "HTTP listen address")
+		grpcAddr = flag.String("grpc.addr", defaultGrpcPort, "gRPC listen address")
 	)
 
+	//LOGGER
 	var logger log.Logger
 	{
 		logger = log.NewLogfmtLogger(os.Stderr)
 		logger = log.NewSyncLogger(logger)
 		logger = level.NewFilter(logger, level.AllowDebug())
 		logger = log.With(logger,
-			"svc", "order",
+			"svc", "user",
 			"ts", log.DefaultTimestampUTC,
 			"caller", log.DefaultCaller,
 		)
@@ -38,39 +45,41 @@ func main() {
 	level.Info(logger).Log("msg", "service started")
 	defer level.Info(logger).Log("msg", "service ended")
 
+	//LOAD .ENV CONFIGURATION
 	err := config.LoadConfiguration()
 	if err != nil {
-		logger.Log("during", "Load .env", "err", err)
+		level.Info(logger).Log("during", "Load .env", "err", err)
+		os.Exit(1)
 	}
 
+	//SET SQL DATABASE
 	err = database.SetupDB()
 	if err != nil {
-		panic(err)
+		level.Info(logger).Log("during", "Setup DB", "err", err)
+		os.Exit(1)
 	}
 	sqlDB := database.GetConnection()
-	userRepo := repository.NewUserRepository(sqlDB, logger)
-	userSvc := service.NewUserService(userRepo, logger)
+
+	userRepo := repository.NewUserRepository(sqlDB)
+
+	var userSvc domain.UserService
+	userSvc = service.NewUserService(userRepo)
+	userSvc = service.NewUserServiceLogging(log.With(logger, "component", "users"), userSvc)
 
 	//GRPC SERVER
 	endpointsGRPC := transport.MakeEndpointsGRPC(userSvc)
 	grpcServer := transport.NewUserGRPCServer(endpointsGRPC, logger)
 
-	grpcListener, err := net.Listen("tcp", ":50051")
-	if err != nil {
-		logger.Log("during", "Listen", "err", err)
-		os.Exit(1)
-	}
-
 	go func() {
-		baseServer := grpc.NewServer()
-		pb.RegisterUserServiceServer(baseServer, grpcServer)
-		level.Info(logger).Log("msg", "Server started successfully 🚀")
-		baseServer.Serve(grpcListener)
+		userGrpcServer := server.NewUserServer()
+		if err = userGrpcServer.Run(grpcServer, defaultGrpcPort); err != nil {
+			logger.Log("during", "gRPC serve", "err", err)
+			os.Exit(1)
+		}
+		level.Info(logger).Log("transport", "gRPC", "addr", *grpcAddr)
 	}()
 
 	//HTTP SERVER
-	//middleware := middleware.NewMiddleware(logger, userSvc)
-	//userSvc = middleware
 	grpcClient := pb.NewGrpcClient()
 	endpointsHTTP := transport.MakeEndpointsHTTP(grpcClient)
 	httpServer := transport.NewUserHTTPServer(endpointsHTTP, logger)
@@ -84,13 +93,12 @@ func main() {
 
 	go func() {
 		level.Info(logger).Log("transport", "HTTP", "addr", *httpAddr)
-		server := &http.Server{
+		httpServer := &http.Server{
 			Addr:    *httpAddr,
 			Handler: httpServer,
 		}
-		errs <- server.ListenAndServe()
+		errs <- httpServer.ListenAndServe()
 	}()
 
 	level.Error(logger).Log("exit", <-errs)
-
 }
