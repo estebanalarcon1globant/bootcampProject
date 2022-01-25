@@ -1,0 +1,42 @@
+version: '3'
+
+#define go app service
+services:
+  app:
+    build: .
+    ports:
+      - "8080:8080"
+    restart: on-failure
+    volumes:
+      - .:/app #working directory of container
+    depends_on:
+      - mysql_database
+    container_name: golang-docker-app
+    networks:
+      - fullstack
+
+  mysql_database:
+    image: mysql:5.7
+    environment:
+      - MYSQL_ROOT_HOST=${DB_HOST}
+      - MYSQL_USER=${DB_USER}
+      - MYSQL_PASSWORD=${DB_PASSWORD}
+      - MYSQL_DATABASE=${DB_NAME}
+      - MYSQL_ROOT_PASSWORD=${DB_PASSWORD}
+    container_name: golang-docker-db
+    ports:
+      - "3306:3306"
+    volumes:
+      - golang-docker-data:/var/lib/mysql
+    networks:
+      - fullstack
+
+
+# persisted storage
+volumes:
+  golang-docker-data:
+
+# Networks to be created to facilitate communication between containers
+networks:
+  fullstack:
+    driver: bridge

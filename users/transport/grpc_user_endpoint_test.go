@@ -46,3 +46,47 @@ func TestMakeCreateUserGRPCEndpoint(t *testing.T) {
 		mockUserService.AssertExpectations(t)
 	})
 }
+
+func TestMakeGetUsersGRPCEndpoint(t *testing.T) {
+	mockUserService := new(mocks.UserServiceMock)
+	mockUsers := []domain.Users{
+		{ID: 1,
+			PwdHash: "pass",
+			Name:    "test1",
+			Age:     24,
+		},
+		{ID: 2,
+			PwdHash: "pass",
+			Name:    "test2",
+			Age:     30,
+		},
+	}
+
+	respWant := GetUsersResponse{
+		Users: mockUsers,
+		Err:   nil,
+	}
+
+	t.Run("success", func(t *testing.T) {
+		mockUserService.On("GetUsers", mock.Anything, mock.AnythingOfType("int"), mock.AnythingOfType("int")).
+			Return(mockUsers, nil).Once()
+
+		getUsers := makeGetUsersGRPCEndpoint(mockUserService)
+		respGot, err := getUsers(context.TODO(), GetUsersRequest{})
+		assert.NoError(t, err)
+		assert.Equal(t, respWant, respGot)
+		mockUserService.AssertExpectations(t)
+	})
+
+	t.Run("error", func(t *testing.T) {
+		errorWant := errors.New("test error")
+		mockUserService.On("GetUsers", mock.Anything, mock.AnythingOfType("int"), mock.AnythingOfType("int")).
+			Return([]domain.Users{}, errorWant).Once()
+
+		getUsers := makeGetUsersGRPCEndpoint(mockUserService)
+		_, errGot := getUsers(context.TODO(), GetUsersRequest{})
+
+		assert.EqualError(t, errGot, errorWant.Error())
+		mockUserService.AssertExpectations(t)
+	})
+}
