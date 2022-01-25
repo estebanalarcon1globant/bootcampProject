@@ -24,6 +24,7 @@ const (
 	defaultGrpcPort = ":50051"
 )
 
+//THIS VERSION USES GRPC TRANSPORT AND HTTP TRANSPORT
 func main() {
 	var (
 		httpAddr = flag.String("http.addr", defaultHttpPort, "HTTP listen address")
