@@ -3,16 +3,19 @@ package main
 import (
 	"bootcampProject/config"
 	"bootcampProject/database"
-	pb "bootcampProject/grpc"
-	"bootcampProject/grpc/server"
+	pb "bootcampProject/proto"
 	"bootcampProject/users/domain"
 	"bootcampProject/users/repository"
 	"bootcampProject/users/service"
 	"bootcampProject/users/transport"
+	"context"
 	"flag"
 	"fmt"
 	"github.com/go-kit/kit/log"
 	"github.com/go-kit/kit/log/level"
+	"github.com/grpc-ecosystem/grpc-gateway/v2/runtime"
+	"google.golang.org/grpc"
+	"net"
 	"net/http"
 	"os"
 	"os/signal"
@@ -20,14 +23,14 @@ import (
 )
 
 const (
-	defaultHttpPort = ":8080"
-	defaultGrpcPort = ":50051"
+	defaultGrpcGatewayPort = ":8090"
+	defaultGrpcPort        = ":8080"
 )
 
 func main() {
 	var (
-		httpAddr = flag.String("http.addr", defaultHttpPort, "HTTP listen address")
-		grpcAddr = flag.String("grpc.addr", defaultGrpcPort, "gRPC listen address")
+		grpcGwAddr = flag.String("grpc.gw.addr", defaultGrpcGatewayPort, "gRPC Gateway listen address")
+		grpcAddr   = flag.String("grpc.addr", defaultGrpcPort, "gRPC listen address")
 	)
 
 	//LOGGER
@@ -70,34 +73,74 @@ func main() {
 	endpointsGRPC := transport.MakeEndpointsGRPC(userSvc)
 	grpcServer := transport.NewUserGRPCServer(endpointsGRPC, logger)
 
+	errs := make(chan error)
+
+	// Create a listener on TCP port
+	listener, err := net.Listen("tcp", defaultGrpcPort)
+	if err != nil {
+	}
+
+	s := grpc.NewServer()
+	pb.RegisterUserServiceServer(s, grpcServer)
+	// Serve gRPC server
+
 	go func() {
-		userGrpcServer := server.NewUserServer()
-		if err = userGrpcServer.Run(grpcServer, defaultGrpcPort); err != nil {
-			logger.Log("during", "gRPC serve", "err", err)
-			os.Exit(1)
-		}
-		level.Info(logger).Log("transport", "gRPC", "addr", *grpcAddr)
+		level.Info(logger).Log("transport", "gRPC server", "addr", *grpcAddr)
+		errs <- s.Serve(listener)
 	}()
 
-	//HTTP SERVER
-	grpcClient := pb.NewGrpcClient()
-	endpointsHTTP := transport.MakeEndpointsHTTP(grpcClient)
-	httpServer := transport.NewUserHTTPServer(endpointsHTTP, logger)
+	// Create a client connection to the gRPC server we just started
+	// This is where the gRPC-Gateway proxies the requests
+	conn, err := grpc.DialContext(
+		context.Background(),
+		"0.0.0.0"+defaultGrpcPort,
+		grpc.WithBlock(),
+		grpc.WithInsecure(),
+	)
+	if err != nil {
+	}
 
-	errs := make(chan error)
+	gwMux := runtime.NewServeMux()
+	// Register Greeter
+	err = pb.RegisterUserServiceHandler(context.Background(), gwMux, conn)
+	if err != nil {
+	}
+
+	gwServer := &http.Server{
+		Addr:    *grpcGwAddr,
+		Handler: gwMux,
+	}
+
+	go func() {
+		level.Info(logger).Log("transport", "gRPC Gateway", "addr", *grpcGwAddr)
+		errs <- gwServer.ListenAndServe()
+	}()
+
+	/*
+			//HTTP SERVER
+			grpcClient := pb.NewGrpcClient()
+			endpointsHTTP := transport.MakeEndpointsHTTP(grpcClient)
+			httpServer := transport.NewUserHTTPServer(endpointsHTTP, logger)
+
+		go func() {
+			c := make(chan os.Signal)
+			signal.Notify(c, syscall.SIGINT, syscall.SIGTERM)
+			errs <- fmt.Errorf("%s", <-c)
+		}()
+
+			go func() {
+				level.Info(logger).Log("transport", "HTTP", "addr", *httpAddr)
+				httpServer := &http.Server{
+					Addr:    *httpAddr,
+					Handler: httpServer,
+				}
+				errs <- httpServer.ListenAndServe()
+			}()*/
+
 	go func() {
 		c := make(chan os.Signal)
 		signal.Notify(c, syscall.SIGINT, syscall.SIGTERM)
 		errs <- fmt.Errorf("%s", <-c)
-	}()
-
-	go func() {
-		level.Info(logger).Log("transport", "HTTP", "addr", *httpAddr)
-		httpServer := &http.Server{
-			Addr:    *httpAddr,
-			Handler: httpServer,
-		}
-		errs <- httpServer.ListenAndServe()
 	}()
 
 	level.Error(logger).Log("exit", <-errs)

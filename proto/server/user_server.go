@@ -1,7 +1,7 @@
 package server
 
 import (
-	pb "bootcampProject/grpc"
+	pb "bootcampProject/proto"
 	"context"
 	"google.golang.org/grpc"
 	"log"

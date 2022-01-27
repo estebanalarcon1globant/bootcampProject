@@ -1,7 +1,7 @@
 package main
 
 import (
-	pb "bootcampProject/grpc"
+	pb "bootcampProject/proto"
 	"context"
 	"log"
 	"time"

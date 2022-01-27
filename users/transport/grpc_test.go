@@ -1,7 +1,7 @@
 package transport
 
 import (
-	pb "bootcampProject/grpc"
+	pb "bootcampProject/proto"
 	"bootcampProject/users/domain"
 	"bootcampProject/users/mocks"
 	"context"
@@ -36,9 +36,8 @@ func TestDecodeCreateUserGRPCRequest(t *testing.T) {
 
 	t.Run("error on request", func(t *testing.T) {
 		decodeError := &pb.User{
-			PwdHash: "test",
-			Name:    "nameTest",
-			Age:     20,
+			Name: "nameTest",
+			Age:  20,
 		}
 		_, errGot := decodeCreateUserGRPCRequest(context.TODO(), decodeError)
 		assert.EqualError(t, errGot, ErrBadRequest.Error())
@@ -62,9 +61,8 @@ func TestEncodeCreateUserGRPCResponse(t *testing.T) {
 
 	t.Run("error on request", func(t *testing.T) {
 		encodeError := &pb.User{
-			PwdHash: "test",
-			Name:    "nameTest",
-			Age:     20,
+			Name: "nameTest",
+			Age:  20,
 		}
 		_, errGot := encodeCreateUserGRPCResponse(context.TODO(), encodeError)
 		assert.EqualError(t, errGot, ErrBadRequest.Error())
@@ -158,16 +156,14 @@ func TestEncodeGetUsersResponse(t *testing.T) {
 		resWant := &pb.UserList{
 			Users: []*pb.User{
 				{
-					Id:      int32(encodeIn.Users[0].ID),
-					PwdHash: encodeIn.Users[0].PwdHash,
-					Name:    encodeIn.Users[0].Name,
-					Age:     int32(encodeIn.Users[0].Age),
+					Id:   int32(encodeIn.Users[0].ID),
+					Name: encodeIn.Users[0].Name,
+					Age:  int32(encodeIn.Users[0].Age),
 				},
 				{
-					Id:      int32(encodeIn.Users[1].ID),
-					PwdHash: encodeIn.Users[1].PwdHash,
-					Name:    encodeIn.Users[1].Name,
-					Age:     int32(encodeIn.Users[1].Age),
+					Id:   int32(encodeIn.Users[1].ID),
+					Name: encodeIn.Users[1].Name,
+					Age:  int32(encodeIn.Users[1].Age),
 				},
 			},
 		}
@@ -180,9 +176,8 @@ func TestEncodeGetUsersResponse(t *testing.T) {
 
 	t.Run("error on request", func(t *testing.T) {
 		encodeError := &pb.User{
-			PwdHash: "test",
-			Name:    "nameTest",
-			Age:     20,
+			Name: "nameTest",
+			Age:  20,
 		}
 		_, errGot := encodeGetUsersGRPCResponse(context.TODO(), encodeError)
 		assert.EqualError(t, errGot, ErrBadRequest.Error())

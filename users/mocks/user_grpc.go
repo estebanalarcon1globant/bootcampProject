@@ -1,7 +1,7 @@
 package mocks
 
 import (
-	pb "bootcampProject/grpc"
+	pb "bootcampProject/proto"
 	"context"
 	"github.com/stretchr/testify/mock"
 	"google.golang.org/grpc"
