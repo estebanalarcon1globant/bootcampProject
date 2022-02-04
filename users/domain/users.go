@@ -5,5 +5,6 @@ type Users struct {
 	PwdHash string `json:"pwd_hash"`
 	Name    string `json:"name"`
 	Age     int    `json:"age"`
+	Email   string `json:"email"`
 	//ParentID  int
 }

@@ -26,3 +26,9 @@ func (rep *userRepository) GetUsers(_ context.Context, limit int, offset int) ([
 	err := rep.dbHandler.Conn.Limit(limit).Offset(offset).Find(&users).Error
 	return users, err
 }
+
+func (rep *userRepository) GetUserByEmail(_ context.Context, email string) (domain.Users, error) {
+	var user domain.Users
+	err := rep.dbHandler.Conn.Where("email = ?", email).First(&user).Error
+	return user, err
+}

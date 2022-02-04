@@ -6,6 +6,7 @@ import (
 	"context"
 	"database/sql"
 	"database/sql/driver"
+	"errors"
 	"github.com/DATA-DOG/go-sqlmock"
 	"github.com/stretchr/testify/require"
 	"github.com/stretchr/testify/suite"
@@ -74,6 +75,7 @@ func (s *SuiteUser) TestUserRepository_CreateUser() {
 		PwdHash: "test",
 		Name:    "nameTest",
 		Age:     25,
+		Email:   "mail@test.com",
 	}
 
 	idExpected := 1
@@ -84,8 +86,8 @@ func (s *SuiteUser) TestUserRepository_CreateUser() {
 	WillReturnRows(
 		sqlmock.NewRows([]string{"id"}).AddRow(idExpected))*/
 
-	s.mock.ExpectExec(regexp.QuoteMeta("INSERT INTO `users` (`pwd_hash`,`name`,`age`) VALUES (?,?,?)")).
-		WithArgs(sqlmock.AnyArg(), sqlmock.AnyArg(), sqlmock.AnyArg()).
+	s.mock.ExpectExec(regexp.QuoteMeta("INSERT INTO `users` (`pwd_hash`,`name`,`age`,`email`) VALUES (?,?,?,?)")).
+		WithArgs(sqlmock.AnyArg(), sqlmock.AnyArg(), sqlmock.AnyArg(), sqlmock.AnyArg()).
 		WillReturnResult(sqlmock.NewResult(1, 1))
 	//WillReturnRows(
 	//	sqlmock.NewRows([]string{"id"}).AddRow(idExpected))
@@ -97,9 +99,9 @@ func (s *SuiteUser) TestUserRepository_CreateUser() {
 
 func (s *SuiteUser) TestUserRepository_GetUsers() {
 
-	columns := []string{"id", "pwd_hash", "name", "age"}
-	row1 := []driver.Value{2, "test1", "nameTest1", 25}
-	row2 := []driver.Value{3, "test2", "nameTest2", 30}
+	columns := []string{"id", "pwd_hash", "name", "age", "email"}
+	row1 := []driver.Value{2, "test1", "nameTest1", 25, "test@gmail.com"}
+	row2 := []driver.Value{3, "test2", "nameTest2", 30, "test2@gmail.com"}
 
 	var limit, offset int
 	limit = 5
@@ -115,4 +117,32 @@ func (s *SuiteUser) TestUserRepository_GetUsers() {
 
 	_, err := s.repository.GetUsers(context.TODO(), limit, offset)
 	require.NoError(s.T(), err)
+}
+
+func (s *SuiteUser) TestUserRepository_Authenticate_OK() {
+
+	idExpected := 10
+	email := "test@test.com"
+
+	columns := []string{"id", "pwd_hash", "name", "age", "email"}
+	row1 := []driver.Value{idExpected, "test1", "nameTest1", 25, email}
+
+	s.mock.ExpectQuery("SELECT (.+) FROM `users` WHERE (.+)").
+		WillReturnRows(sqlmock.NewRows(columns).AddRow(row1...))
+
+	userGot, err := s.repository.GetUserByEmail(context.TODO(), email)
+	require.NoError(s.T(), err)
+	require.EqualValues(s.T(), userGot.ID, idExpected)
+}
+
+func (s *SuiteUser) TestUserRepository_Authenticate_ErrorNotFound() {
+
+	email := "test@test.com"
+	errExpected := errors.New("record not found")
+
+	s.mock.ExpectQuery("SELECT (.+) FROM `users` WHERE (.+)").
+		//WithArgs(sqlmock.AnyArg(), sqlmock.AnyArg()).
+		WillReturnError(errExpected)
+	_, errGot := s.repository.GetUserByEmail(context.TODO(), email)
+	require.EqualError(s.T(), errExpected, errGot.Error())
 }

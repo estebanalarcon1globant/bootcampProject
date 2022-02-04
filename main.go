@@ -61,12 +61,14 @@ func main() {
 		level.Info(logger).Log("during", "Setup DB", "err", err)
 		os.Exit(1)
 	}
-	sqlDB := database.GetConnection()
 
+	sqlDB := database.GetConnection()
 	userRepo := repository.NewUserRepository(sqlDB)
 
 	var userSvc domain.UserService
-	userSvc = service.NewUserService(userRepo)
+
+	tokenGenerator := service.NewTokenGenerator()
+	userSvc = service.NewUserService(userRepo, tokenGenerator)
 	userSvc = service.NewUserServiceLogging(log.With(logger, "component", "users"), userSvc)
 
 	//GRPC SERVER
@@ -78,15 +80,17 @@ func main() {
 	// Create a listener on TCP port
 	listener, err := net.Listen("tcp", defaultGrpcPort)
 	if err != nil {
+		level.Info(logger).Log("during", "Listen tcp", "err", err)
+		os.Exit(1)
 	}
 
-	s := grpc.NewServer()
-	pb.RegisterUserServiceServer(s, grpcServer)
+	baseServer := grpc.NewServer()
+	pb.RegisterUserServiceServer(baseServer, grpcServer)
 	// Serve gRPC server
 
 	go func() {
 		level.Info(logger).Log("transport", "gRPC server", "addr", *grpcAddr)
-		errs <- s.Serve(listener)
+		errs <- baseServer.Serve(listener)
 	}()
 
 	// Create a client connection to the gRPC server we just started
@@ -98,12 +102,16 @@ func main() {
 		grpc.WithInsecure(),
 	)
 	if err != nil {
+		level.Info(logger).Log("during", "Dial context", "err", err)
+		os.Exit(1)
 	}
 
 	gwMux := runtime.NewServeMux()
-	// Register Greeter
+	// Register User Handler
 	err = pb.RegisterUserServiceHandler(context.Background(), gwMux, conn)
 	if err != nil {
+		level.Info(logger).Log("during", "Setup RegisterUserServiceHandler", "err", err)
+		os.Exit(1)
 	}
 
 	gwServer := &http.Server{
@@ -115,27 +123,6 @@ func main() {
 		level.Info(logger).Log("transport", "gRPC Gateway", "addr", *grpcGwAddr)
 		errs <- gwServer.ListenAndServe()
 	}()
-
-	/*
-			//HTTP SERVER
-			grpcClient := pb.NewGrpcClient()
-			endpointsHTTP := transport.MakeEndpointsHTTP(grpcClient)
-			httpServer := transport.NewUserHTTPServer(endpointsHTTP, logger)
-
-		go func() {
-			c := make(chan os.Signal)
-			signal.Notify(c, syscall.SIGINT, syscall.SIGTERM)
-			errs <- fmt.Errorf("%s", <-c)
-		}()
-
-			go func() {
-				level.Info(logger).Log("transport", "HTTP", "addr", *httpAddr)
-				httpServer := &http.Server{
-					Addr:    *httpAddr,
-					Handler: httpServer,
-				}
-				errs <- httpServer.ListenAndServe()
-			}()*/
 
 	go func() {
 		c := make(chan os.Signal)

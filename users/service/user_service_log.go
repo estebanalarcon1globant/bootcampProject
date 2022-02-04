@@ -48,6 +48,14 @@ func (mw *userServiceLogging) GetUsers(ctx context.Context, limit int, offset in
 	return
 }
 
+func (mw *userServiceLogging) GetUserByEmail(ctx context.Context, email string) (output domain.Users, err error) {
+	return domain.Users{}, nil
+}
+
+func (mw *userServiceLogging) Authenticate(ctx context.Context, auth domain.Auth) (output string, err error) {
+	return "", nil
+}
+
 func getStringFromStruct(entity interface{}) string {
 	return fmt.Sprintf("%#v", entity)
 }

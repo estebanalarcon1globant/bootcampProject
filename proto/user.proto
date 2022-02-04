@@ -24,12 +24,14 @@ message NewUser {
   string pwd_hash = 1;
   string name = 2;
   int32 age = 3;
+  string email = 4;
 }
 
 message User {
   int32 id = 1;
   string name = 2;
   int32 age = 3;
+  string email = 4;
 }
 
 message GetUsersParams {

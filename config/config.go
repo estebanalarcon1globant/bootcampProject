@@ -10,6 +10,7 @@ import (
 
 type config struct {
 	mySqlConfig mySqlConfig
+	JWT         JWT
 }
 
 type mySqlConfig struct {
@@ -18,6 +19,10 @@ type mySqlConfig struct {
 	sqlDBDatabase string
 	sqlDBUsername string
 	sqlDBPass     string
+}
+
+type JWT struct {
+	jwtSecret string
 }
 
 var conf config
@@ -60,6 +65,11 @@ func LoadConfiguration() error {
 		errs = append(errs, "Error variable database.mysql.pass from .env")
 	}
 
+	c.JWT.jwtSecret = os.Getenv("JWT_SECRET")
+	if c.JWT.jwtSecret == "" {
+		errs = append(errs, "Error variable jwt.jwt_secret from .env")
+	}
+
 	if len(errs) > 0 {
 		log.Error().
 			Interface("errors", errs).
@@ -85,4 +95,7 @@ func GetSqlDBUsername() string {
 }
 func GetSqlDBPass() string {
 	return conf.mySqlConfig.sqlDBPass
+}
+func GetJwtSecret() string {
+	return conf.JWT.jwtSecret
 }

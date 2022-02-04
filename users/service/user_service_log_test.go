@@ -20,6 +20,7 @@ func TestUserServiceLogging_CreateUser(t *testing.T) {
 		Age:     24,
 	}
 	mockUserRepo := new(mocks.UserRepoMock)
+	mockTokenGen := new(mocks.AuthMock)
 	var logger log.Logger
 	logger = log.NewLogfmtLogger(os.Stderr)
 	idExpected := 1
@@ -30,7 +31,7 @@ func TestUserServiceLogging_CreateUser(t *testing.T) {
 		mockUserRepo.On("CreateUser", mock.Anything, mock.AnythingOfType("domain.Users")).
 			Return(idExpected, nil).Once()
 
-		u := NewUserService(mockUserRepo)
+		u := NewUserService(mockUserRepo, mockTokenGen)
 		u = NewUserServiceLogging(logger, u)
 
 		idGot, err := u.CreateUser(context.TODO(), tempMockUser)
@@ -48,7 +49,7 @@ func TestUserServiceLogging_CreateUser(t *testing.T) {
 		mockUserRepo.On("CreateUser", mock.Anything, mock.AnythingOfType("domain.Users")).
 			Return(0, errorWant).Once()
 
-		u := NewUserService(mockUserRepo)
+		u := NewUserService(mockUserRepo, mockTokenGen)
 		u = NewUserServiceLogging(logger, u)
 
 		_, errGot := u.CreateUser(context.TODO(), tempMockUser)
@@ -72,6 +73,7 @@ func TestUserServiceLogging_GetUsers(t *testing.T) {
 		},
 	}
 	mockUserRepo := new(mocks.UserRepoMock)
+	mockTokenGen := new(mocks.AuthMock)
 	limit, offset := 5, 1
 
 	var logger log.Logger
@@ -82,7 +84,7 @@ func TestUserServiceLogging_GetUsers(t *testing.T) {
 		mockUserRepo.On("GetUsers", mock.Anything, mock.AnythingOfType("int"), mock.AnythingOfType("int")).
 			Return(mockUsers, nil).Once()
 
-		u := NewUserService(mockUserRepo)
+		u := NewUserService(mockUserRepo, mockTokenGen)
 		u = NewUserServiceLogging(logger, u)
 
 		usersGot, err := u.GetUsers(context.TODO(), limit, offset)
@@ -98,7 +100,7 @@ func TestUserServiceLogging_GetUsers(t *testing.T) {
 		mockUserRepo.On("GetUsers", mock.Anything, mock.AnythingOfType("int"), mock.AnythingOfType("int")).
 			Return([]domain.Users{}, errorWant).Once()
 
-		u := NewUserService(mockUserRepo)
+		u := NewUserService(mockUserRepo, mockTokenGen)
 		u = NewUserServiceLogging(logger, u)
 
 		_, errGot := u.GetUsers(context.TODO(), limit, offset)

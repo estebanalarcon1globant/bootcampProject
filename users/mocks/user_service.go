@@ -48,3 +48,11 @@ func (_m *UserServiceMock) GetUsers(_a0 context.Context, _a1 int, _a2 int) ([]do
 	}
 	return r0, r1
 }
+
+func (_m *UserServiceMock) GetUserByEmail(_a0 context.Context, _a1 string) (domain.Users, error) {
+	return domain.Users{}, nil
+}
+
+func (_m *UserServiceMock) Authenticate(_a0 context.Context, _a1 domain.Auth) (string, error) {
+	return "", nil
+}
