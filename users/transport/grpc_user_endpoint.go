@@ -22,18 +22,30 @@ func MakeEndpointsGRPC(s domain.UserService) UserEndpointsGRPC {
 
 func makeCreateUserGRPCEndpoint(s domain.UserService) endpoint.Endpoint {
 	return func(ctx context.Context, request interface{}) (interface{}, error) {
-		//TODO: Handle type assertion's error
-		req := request.(CreateUserRequest)
-		id, err := s.CreateUser(ctx, req.User)
-		return CreateUserResponse{ID: id, Err: err}, err
+		if req, ok := request.(CreateUserRequest); ok {
+			err := req.Validate()
+			if err != nil {
+				return CreateUserResponse{Err: err}, err
+			}
+			id, err := s.CreateUser(ctx, req.User)
+			return CreateUserResponse{ID: id, Err: err}, err
+		}
+		return CreateUserResponse{Err: ErrBadRequest}, ErrBadRequest
 	}
 }
 
 func makeGetUsersGRPCEndpoint(s domain.UserService) endpoint.Endpoint {
 	return func(ctx context.Context, request interface{}) (interface{}, error) {
 		//TODO: Handle type assertion's error
-		req := request.(GetUsersRequest)
-		users, err := s.GetUsers(ctx, req.limit, req.offset)
-		return GetUsersResponse{Users: users, Err: err}, err
+		if req, ok := request.(GetUsersRequest); ok {
+			err := req.Validate()
+			if err != nil {
+				return GetUsersResponse{Err: err}, err
+			}
+
+			users, err := s.GetUsers(ctx, req.limit, req.offset)
+			return GetUsersResponse{Users: users, Err: err}, err
+		}
+		return CreateUserResponse{Err: ErrBadRequest}, ErrBadRequest
 	}
 }

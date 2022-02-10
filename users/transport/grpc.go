@@ -34,7 +34,6 @@ func NewUserGRPCServer(svcEndpoints UserEndpointsGRPC, logger log.Logger) pb.Use
 			encodeCreateUserGRPCResponse,
 			opts...,
 		),
-		//TODO: endpoint getUsers
 		getUsers: gt.NewServer(
 			svcEndpoints.GetUsers,
 			decodeGetUsersGRPCRequest,
@@ -44,22 +43,21 @@ func NewUserGRPCServer(svcEndpoints UserEndpointsGRPC, logger log.Logger) pb.Use
 	}
 }
 
-//func (s *gRPCServer) mustEmbedUnimplementedUserServiceServer(){}
-
-func (s *gRPCServer) CreateUser(ctx context.Context, req *pb.NewUser) (*pb.User, error) {
+func (s *gRPCServer) CreateUser(ctx context.Context, req *pb.CreateUserReq) (*pb.CreateUserResp, error) {
 	_, resp, err := s.createUser.ServeGRPC(ctx, req)
 	if err != nil {
 		return nil, err
 	}
-	return resp.(*pb.User), nil
+	return resp.(*pb.CreateUserResp), nil
 }
 
 func decodeCreateUserGRPCRequest(_ context.Context, request interface{}) (interface{}, error) {
-	if req, ok := request.(*pb.NewUser); ok {
+	if req, ok := request.(*pb.CreateUserReq); ok {
 		return CreateUserRequest{User: domain.Users{
 			PwdHash: req.GetPwdHash(),
 			Name:    req.GetName(),
 			Age:     int(req.GetAge()),
+			Email:   req.GetEmail(),
 		}}, nil
 	}
 	return CreateUserRequest{}, ErrBadRequest
@@ -67,23 +65,24 @@ func decodeCreateUserGRPCRequest(_ context.Context, request interface{}) (interf
 
 func encodeCreateUserGRPCResponse(_ context.Context, response interface{}) (interface{}, error) {
 	if resp, ok := response.(CreateUserResponse); ok {
-		return &pb.User{
-			Id: int32(resp.ID),
-		}, nil
+		return &pb.CreateUserResp{
+			Id:    int32(resp.ID),
+			Email: resp.Email,
+		}, resp.Err
 	}
-	return &pb.User{}, ErrBadRequest
+	return &pb.CreateUserResp{Error: ErrBadRequest.Error()}, ErrBadRequest
 }
 
-func (s *gRPCServer) GetUsers(ctx context.Context, req *pb.GetUsersParams) (*pb.UserList, error) {
+func (s *gRPCServer) GetUsers(ctx context.Context, req *pb.GetUsersReq) (*pb.GetUsersResp, error) {
 	_, resp, err := s.getUsers.ServeGRPC(ctx, req)
 	if err != nil {
 		return nil, err
 	}
-	return resp.(*pb.UserList), nil
+	return resp.(*pb.GetUsersResp), nil
 }
 
 func decodeGetUsersGRPCRequest(_ context.Context, request interface{}) (interface{}, error) {
-	if req, ok := request.(*pb.GetUsersParams); ok {
+	if req, ok := request.(*pb.GetUsersReq); ok {
 		return GetUsersRequest{
 			limit:  int(req.Limit),
 			offset: int(req.Offset),
@@ -94,7 +93,7 @@ func decodeGetUsersGRPCRequest(_ context.Context, request interface{}) (interfac
 
 func encodeGetUsersGRPCResponse(_ context.Context, response interface{}) (interface{}, error) {
 	if resp, ok := response.(GetUsersResponse); ok {
-		return &pb.UserList{
+		return &pb.GetUsersResp{
 			Users: func(users []domain.Users) []*pb.User {
 				var res []*pb.User
 				for _, user := range users {

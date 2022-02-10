@@ -16,6 +16,10 @@ type tokenGenerator struct {
 
 const EXPIRATION = 30
 
+var (
+	ErrUserAlreadyExists = errors.New("user already exists")
+)
+
 func NewTokenGenerator() domain.TokenGenerator {
 	return &tokenGenerator{
 		jwtSecret: config.GetJwtSecret()}
@@ -48,12 +52,17 @@ func NewUserService(rep domain.UserRepository, tokenGen domain.TokenGenerator) d
 
 // CreateUser Create User persistent
 func (s *userService) CreateUser(ctx context.Context, user domain.Users) (int, error) {
-	//logger := log.With(s.logger, "method", "CreateUser")
+	user.PwdHash = utils.HashSHA256(user.PwdHash)
+	userTemp, err := s.userRepository.GetUserByEmail(ctx, user.Email)
+	if err != nil {
+		return 0, err
+	}
+
+	if userTemp.ID != 0 {
+		return 0, ErrUserAlreadyExists
+	}
+
 	return s.userRepository.CreateUser(ctx, user)
-	//if err != nil {
-	//	level.Error(s.logger).Log("err", err)
-	//}
-	//return id, err
 }
 
 func (s *userService) GetUsers(ctx context.Context, limit int, offset int) ([]domain.Users, error) {

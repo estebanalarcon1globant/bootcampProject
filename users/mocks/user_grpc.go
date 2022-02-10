@@ -11,18 +11,18 @@ type UserGrpcMock struct {
 	mock.Mock
 }
 
-func (_m *UserGrpcMock) CreateUser(_a0 context.Context, _a1 *pb.NewUser, _ ...grpc.CallOption) (*pb.User, error) {
+func (_m *UserGrpcMock) CreateUser(_a0 context.Context, _a1 *pb.CreateUserReq, _ ...grpc.CallOption) (*pb.CreateUserResp, error) {
 	ret := _m.Called(_a0, _a1)
 
-	var r0 *pb.User
-	if rf, ok := ret.Get(0).(func(context.Context, *pb.NewUser) *pb.User); ok {
+	var r0 *pb.CreateUserResp
+	if rf, ok := ret.Get(0).(func(context.Context, *pb.CreateUserReq) *pb.CreateUserResp); ok {
 		r0 = rf(_a0, _a1)
 	} else {
-		r0 = ret.Get(0).(*pb.User)
+		r0 = ret.Get(0).(*pb.CreateUserResp)
 	}
 
 	var r1 error
-	if rf, ok := ret.Get(1).(func(context.Context, *pb.NewUser) error); ok {
+	if rf, ok := ret.Get(1).(func(context.Context, *pb.CreateUserReq) error); ok {
 		r1 = rf(_a0, _a1)
 	} else {
 		r1 = ret.Error(1)
@@ -31,18 +31,18 @@ func (_m *UserGrpcMock) CreateUser(_a0 context.Context, _a1 *pb.NewUser, _ ...gr
 }
 
 // GetUsers provides a mock function with given fields: _a0, _a1, _a2
-func (_m *UserGrpcMock) GetUsers(_a0 context.Context, _a1 *pb.GetUsersParams, _ ...grpc.CallOption) (*pb.UserList, error) {
+func (_m *UserGrpcMock) GetUsers(_a0 context.Context, _a1 *pb.GetUsersReq, _ ...grpc.CallOption) (*pb.GetUsersResp, error) {
 	ret := _m.Called(_a0, _a1)
 
-	var r0 *pb.UserList
-	if rf, ok := ret.Get(0).(func(context.Context, *pb.GetUsersParams) *pb.UserList); ok {
+	var r0 *pb.GetUsersResp
+	if rf, ok := ret.Get(0).(func(context.Context, *pb.GetUsersReq) *pb.GetUsersResp); ok {
 		r0 = rf(_a0, _a1)
 	} else {
-		r0 = ret.Get(0).(*pb.UserList)
+		r0 = ret.Get(0).(*pb.GetUsersResp)
 	}
 
 	var r1 error
-	if rf, ok := ret.Get(1).(func(context.Context, *pb.GetUsersParams) error); ok {
+	if rf, ok := ret.Get(1).(func(context.Context, *pb.GetUsersReq) error); ok {
 		r1 = rf(_a0, _a1)
 	} else {
 		r1 = ret.Error(1)

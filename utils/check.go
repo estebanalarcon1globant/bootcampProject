@@ -1,6 +1,9 @@
 package utils
 
-import "reflect"
+import (
+	"fmt"
+	"reflect"
+)
 
 func CheckEmptyField(req interface{}) bool {
 	v := reflect.ValueOf(req)
@@ -11,4 +14,24 @@ func CheckEmptyField(req interface{}) bool {
 		}
 	}
 	return false
+}
+
+type Transport struct {
+	Car
+	Bus
+}
+
+type Car struct {
+	velocity int
+}
+
+type Bus struct {
+}
+
+func (c *Bus) Run() {
+	fmt.Println("Bus is running")
+}
+
+func (c *Car) Run() {
+	fmt.Println("Car is running")
 }

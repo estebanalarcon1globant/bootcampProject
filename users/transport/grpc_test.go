@@ -19,7 +19,7 @@ var (
 
 func TestDecodeCreateUserGRPCRequest(t *testing.T) {
 	t.Run("success", func(t *testing.T) {
-		decodeIn := &pb.NewUser{
+		decodeIn := &pb.CreateUserReq{
 			PwdHash: "test",
 			Name:    "nameTest",
 			Age:     20,
@@ -51,7 +51,7 @@ func TestEncodeCreateUserGRPCResponse(t *testing.T) {
 			ID:  expectedId,
 			Err: nil,
 		}
-		resWant := &pb.User{
+		resWant := &pb.CreateUserResp{
 			Id: int32(expectedId),
 		}
 		resGot, errGot := encodeCreateUserGRPCResponse(context.TODO(), encodeIn)
@@ -60,9 +60,10 @@ func TestEncodeCreateUserGRPCResponse(t *testing.T) {
 	})
 
 	t.Run("error on request", func(t *testing.T) {
-		encodeError := &pb.User{
-			Name: "nameTest",
-			Age:  20,
+		encodeError := &pb.CreateUserResp{
+			Id:    1,
+			Email: "test@test.com",
+			Error: "",
 		}
 		_, errGot := encodeCreateUserGRPCResponse(context.TODO(), encodeError)
 		assert.EqualError(t, errGot, ErrBadRequest.Error())
@@ -77,7 +78,7 @@ func TestGRPCServer_CreateUser(t *testing.T) {
 	logger = log.NewLogfmtLogger(os.Stderr)
 	grpcServer := NewUserGRPCServer(endpointsGRPC, logger)
 
-	userMock := &pb.NewUser{
+	userMock := &pb.CreateUserReq{
 		PwdHash: "test",
 		Name:    "nameTest",
 		Age:     20,
@@ -86,7 +87,7 @@ func TestGRPCServer_CreateUser(t *testing.T) {
 	t.Run("success", func(t *testing.T) {
 		tempUserMock := userMock
 		idExpected := 1
-		resWant := &pb.User{
+		resWant := &pb.CreateUserResp{
 			Id: int32(idExpected),
 		}
 		userSvcMock.On("CreateUser", mock.Anything, mock.AnythingOfType("domain.Users")).
@@ -113,7 +114,7 @@ func TestGRPCServer_CreateUser(t *testing.T) {
 func TestDecodeGetUsersRequest(t *testing.T) {
 	t.Run("success", func(t *testing.T) {
 		limit, offset := 10, 0
-		decodeIn := &pb.GetUsersParams{
+		decodeIn := &pb.GetUsersReq{
 			Limit:  int32(limit),
 			Offset: int32(offset),
 		}
@@ -153,7 +154,7 @@ func TestEncodeGetUsersResponse(t *testing.T) {
 			},
 			Err: nil,
 		}
-		resWant := &pb.UserList{
+		resWant := &pb.GetUsersResp{
 			Users: []*pb.User{
 				{
 					Id:   int32(encodeIn.Users[0].ID),
