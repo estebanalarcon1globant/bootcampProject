@@ -23,12 +23,14 @@ type CreateUserResponse struct {
 
 // GetUsersRequest holds the request parameters for the GetUsers method.
 type GetUsersRequest struct {
-	limit  int `validate:"min= 1"`
-	offset int `validate:"min= 0"`
+	limit  int
+	offset int
 }
 
-func (req *GetUsersRequest) Validate() error {
-	return validator.Validate(req)
+func (req *GetUsersRequest) SetDefault() {
+	if req.limit == 0 {
+		req.limit = 100
+	}
 }
 
 // GetUsersResponse holds the response values for the GetUsers method.

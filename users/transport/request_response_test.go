@@ -47,3 +47,25 @@ func TestCreateUserRequest_Validate(t *testing.T) {
 		assert.EqualError(t, errsGot, errExpected.Error())
 	})
 }
+
+/*
+func TestGetUsersRequest_Validate(t *testing.T) {
+	t.Run("Ok: Request is correct", func(t *testing.T) {
+		reqOk := GetUsersRequest{
+			limit:  100,
+			offset: 0,
+		}
+		errsGot := reqOk.Validate()
+		assert.NoError(t, errsGot)
+	})
+
+	t.Run("Ok: Request is correct", func(t *testing.T) {
+		reqError := GetUsersRequest{
+			limit:  0,
+			offset: 0,
+		}
+		errsGot := reqError.Validate()
+		fmt.Println(errsGot)
+		assert.NoError(t, errsGot)
+	})
+}*/

@@ -38,11 +38,7 @@ func makeGetUsersGRPCEndpoint(s domain.UserService) endpoint.Endpoint {
 	return func(ctx context.Context, request interface{}) (interface{}, error) {
 		//TODO: Handle type assertion's error
 		if req, ok := request.(GetUsersRequest); ok {
-			err := req.Validate()
-			if err != nil {
-				return GetUsersResponse{Err: err}, err
-			}
-
+			req.SetDefault()
 			users, err := s.GetUsers(ctx, req.limit, req.offset)
 			return GetUsersResponse{Users: users, Err: err}, err
 		}
