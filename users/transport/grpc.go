@@ -12,8 +12,9 @@ import (
 
 type gRPCServer struct {
 	pb.UnimplementedUserServiceServer
-	createUser gt.Handler
-	getUsers   gt.Handler
+	createUser   gt.Handler
+	getUsers     gt.Handler
+	authenticate gt.Handler
 }
 
 var (
@@ -38,6 +39,13 @@ func NewUserGRPCServer(svcEndpoints UserEndpointsGRPC, logger log.Logger) pb.Use
 			svcEndpoints.GetUsers,
 			decodeGetUsersGRPCRequest,
 			encodeGetUsersGRPCResponse,
+			opts...,
+		),
+
+		authenticate: gt.NewServer(
+			svcEndpoints.Authenticate,
+			decodeAuthenticateGRPCRequest,
+			encodeAuthenticateGRPCResponse,
 			opts...,
 		),
 	}
@@ -98,9 +106,10 @@ func encodeGetUsersGRPCResponse(_ context.Context, response interface{}) (interf
 				var res []*pb.User
 				for _, user := range users {
 					temp := &pb.User{
-						Id:   int32(user.ID),
-						Name: user.Name,
-						Age:  int32(user.Age),
+						Id:    int32(user.ID),
+						Name:  user.Name,
+						Age:   int32(user.Age),
+						Email: user.Email,
 					}
 					res = append(res, temp)
 				}
@@ -109,4 +118,29 @@ func encodeGetUsersGRPCResponse(_ context.Context, response interface{}) (interf
 		}, nil
 	}
 	return &pb.User{}, ErrBadRequest
+}
+
+func (s *gRPCServer) Authenticate(ctx context.Context, req *pb.AuthReq) (*pb.AuthResp, error) {
+	_, resp, err := s.authenticate.ServeGRPC(ctx, req)
+	if err != nil {
+		return nil, err
+	}
+	return resp.(*pb.AuthResp), nil
+}
+
+func decodeAuthenticateGRPCRequest(_ context.Context, request interface{}) (interface{}, error) {
+	if req, ok := request.(*pb.AuthReq); ok {
+		return domain.Auth{
+			Email:    req.GetEmail(),
+			Password: req.GetPassword(),
+		}, nil
+	}
+	return domain.Auth{}, ErrBadRequest
+}
+
+func encodeAuthenticateGRPCResponse(_ context.Context, response interface{}) (interface{}, error) {
+	if resp, ok := response.(AuthResponse); ok {
+		return &pb.AuthResp{Token: resp.Token}, nil
+	}
+	return &pb.AuthResp{}, ErrBadRequest
 }

@@ -34,7 +34,7 @@ func (gen *tokenGenerator) GenerateToken(email string) (string, error) {
 		},
 	}
 	token := jwt.NewWithClaims(jwt.SigningMethodHS256, uClaim)
-	return token.SignedString(gen.jwtSecret)
+	return token.SignedString([]byte(gen.jwtSecret))
 }
 
 type userService struct {
@@ -92,7 +92,7 @@ func (s *userService) Authenticate(ctx context.Context, auth domain.Auth) (strin
 	//create TOKEN
 	token, err := s.tokenGenerator.GenerateToken(auth.Email)
 	if err != nil {
-		return "", errors.New("generating token")
+		return "", errors.New("GenerateToken: " + err.Error())
 	}
 	return token, nil
 }

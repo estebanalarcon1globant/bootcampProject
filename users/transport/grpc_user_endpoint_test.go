@@ -10,12 +10,48 @@ import (
 	"testing"
 )
 
+func TestMakeAuthenticateGRPCEndpoint(t *testing.T) {
+	mockAuth := domain.Auth{
+		Email:    "test@test.com",
+		Password: "password",
+	}
+	mockUserService := new(mocks.UserServiceMock)
+
+	t.Run("success", func(t *testing.T) {
+		mockAuthTemp := mockAuth
+		tokenExpected := "token"
+		responseExpected := AuthResponse{
+			Token: tokenExpected,
+		}
+		mockUserService.On("Authenticate", mock.Anything, mock.AnythingOfType("domain.Auth")).
+			Return(tokenExpected, nil).Once()
+		grpc := MakeEndpointsGRPC(mockUserService)
+		resGot, err := grpc.Authenticate(context.TODO(), mockAuthTemp)
+		assert.NoError(t, err)
+		assert.Equal(t, responseExpected, resGot)
+		mockUserService.AssertExpectations(t)
+	})
+
+	t.Run("Error in authenticate service", func(t *testing.T) {
+		errorWant := errors.New("test error")
+		mockAuthTemp := mockAuth
+		mockUserService.On("Authenticate", mock.Anything, mock.AnythingOfType("domain.Auth")).
+			Return("", errorWant).Once()
+		grpc := MakeEndpointsGRPC(mockUserService)
+		_, errGot := grpc.Authenticate(context.TODO(), mockAuthTemp)
+		assert.EqualError(t, errGot, errorWant.Error())
+		mockUserService.AssertExpectations(t)
+	})
+
+}
+
 func TestMakeCreateUserGRPCEndpoint(t *testing.T) {
 	mockUserReq := CreateUserRequest{User: domain.Users{
 		ID:      1,
 		PwdHash: "pass",
 		Name:    "test",
 		Age:     24,
+		Email:   "test@test.com",
 	}}
 	mockUserService := new(mocks.UserServiceMock)
 	idExpected := 1
@@ -54,11 +90,13 @@ func TestMakeGetUsersGRPCEndpoint(t *testing.T) {
 			PwdHash: "pass",
 			Name:    "test1",
 			Age:     24,
+			Email:   "test@test.com",
 		},
 		{ID: 2,
 			PwdHash: "pass",
 			Name:    "test2",
 			Age:     30,
+			Email:   "test@test.com",
 		},
 	}
 

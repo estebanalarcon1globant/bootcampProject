@@ -38,3 +38,7 @@ type GetUsersResponse struct {
 	Users []domain.Users `json:"users"`
 	Err   error          `json:"error,omitempty"`
 }
+
+type AuthResponse struct {
+	Token string `json:"token"`
+}

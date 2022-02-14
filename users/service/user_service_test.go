@@ -17,6 +17,7 @@ func TestUserService_CreateUser(t *testing.T) {
 		PwdHash: "pass",
 		Name:    "test",
 		Age:     24,
+		Email:   "test@test.com",
 	}
 	mockUserRepo := new(mocks.UserRepoMock)
 	mockTokenGen := new(mocks.AuthMock)
@@ -25,6 +26,11 @@ func TestUserService_CreateUser(t *testing.T) {
 	t.Run("success", func(t *testing.T) {
 		tempMockUser := mockUser
 		tempMockUser.ID = idExpected
+
+		//User doesnt exist
+		mockUserRepo.On("GetUserByEmail", mock.Anything, mock.AnythingOfType("string")).
+			Return(domain.Users{}, nil).Once()
+
 		mockUserRepo.On("CreateUser", mock.Anything, mock.AnythingOfType("domain.Users")).
 			Return(idExpected, nil).Once()
 
@@ -38,12 +44,32 @@ func TestUserService_CreateUser(t *testing.T) {
 		mockUserRepo.AssertExpectations(t)
 	})
 
-	t.Run("error", func(t *testing.T) {
+	t.Run("Error: create User repository", func(t *testing.T) {
 		errorWant := errors.New("test error")
 		tempMockUser := mockUser
 		tempMockUser.ID = 1
+
+		mockUserRepo.On("GetUserByEmail", mock.Anything, mock.AnythingOfType("string")).
+			Return(domain.Users{}, nil).Once()
+
 		mockUserRepo.On("CreateUser", mock.Anything, mock.AnythingOfType("domain.Users")).
 			Return(0, errorWant).Once()
+
+		u := NewUserService(mockUserRepo, mockTokenGen)
+
+		_, errGot := u.CreateUser(context.TODO(), tempMockUser)
+
+		assert.EqualError(t, errGot, errorWant.Error())
+		mockUserRepo.AssertExpectations(t)
+	})
+
+	t.Run("Error: user already exists", func(t *testing.T) {
+		errorWant := ErrUserAlreadyExists
+		tempMockUser := mockUser
+		tempMockUser.ID = 1
+
+		mockUserRepo.On("GetUserByEmail", mock.Anything, mock.AnythingOfType("string")).
+			Return(tempMockUser, nil).Once()
 
 		u := NewUserService(mockUserRepo, mockTokenGen)
 
@@ -125,7 +151,7 @@ func TestUserService_GetUserByEmail(t *testing.T) {
 		mockUserRepo.AssertExpectations(t)
 	})
 
-	t.Run("Error", func(t *testing.T) {
+	t.Run("Error: user not found", func(t *testing.T) {
 		errWant := errors.New("error not found")
 		mockUserRepo.On("GetUserByEmail", mock.Anything, mock.AnythingOfType("string")).
 			Return(domain.Users{}, errWant).Once()

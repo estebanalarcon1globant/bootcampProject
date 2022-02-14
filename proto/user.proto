@@ -18,6 +18,13 @@ service UserService {
       get: "/v1/users"
       };
   }
+
+  rpc Authenticate (AuthReq) returns (AuthResp) {
+    option (google.api.http) = {
+      post: "/v1/login"
+      body: "*"
+    };
+  }
 }
 
 message CreateUserReq {
@@ -47,4 +54,13 @@ message GetUsersReq {
 
 message GetUsersResp {
   repeated User users = 1;
+}
+
+message AuthReq {
+  string email = 1;
+  string password = 2;
+}
+
+message AuthResp {
+  string token = 1;
 }

@@ -17,6 +17,58 @@ var (
 	ErrTesting = errors.New("error testing")
 )
 
+func TestDecodeAuthenticateGRPCRequest(t *testing.T) {
+	t.Run("success", func(t *testing.T) {
+		emailTest := "test@test.com"
+		passwordTest := "test"
+
+		decodeIn := &pb.AuthReq{
+			Email:    emailTest,
+			Password: passwordTest,
+		}
+
+		resWant := &domain.Auth{
+			Email:    emailTest,
+			Password: passwordTest,
+		}
+
+		resGot, errGot := decodeAuthenticateGRPCRequest(context.TODO(), decodeIn)
+		assert.NoError(t, errGot)
+		assert.Equal(t, resWant, resGot)
+	})
+
+	t.Run("error in request: doesn't match interface", func(t *testing.T) {
+		decodeError := &pb.User{
+			Name: "nameTest",
+			Age:  20,
+		}
+		_, errGot := decodeAuthenticateGRPCRequest(context.TODO(), decodeError)
+		assert.EqualError(t, errGot, ErrBadRequest.Error())
+	})
+}
+
+func TestEncodeAuthenticateGRPCResponse(t *testing.T) {
+	t.Run("success", func(t *testing.T) {
+		token := "token"
+		encodeIn := AuthResponse{Token: token}
+		resWant := &pb.AuthResp{Token: token}
+
+		resGot, errGot := encodeAuthenticateGRPCResponse(context.TODO(), encodeIn)
+		assert.NoError(t, errGot)
+		assert.Equal(t, resWant, resGot)
+	})
+
+	t.Run("error in request", func(t *testing.T) {
+		encodeError := &pb.CreateUserResp{
+			Id:    1,
+			Email: "test@test.com",
+			Error: "",
+		}
+		_, errGot := encodeAuthenticateGRPCResponse(context.TODO(), encodeError)
+		assert.EqualError(t, errGot, ErrBadRequest.Error())
+	})
+}
+
 func TestDecodeCreateUserGRPCRequest(t *testing.T) {
 	t.Run("success", func(t *testing.T) {
 		decodeIn := &pb.CreateUserReq{
@@ -82,6 +134,7 @@ func TestGRPCServer_CreateUser(t *testing.T) {
 		PwdHash: "test",
 		Name:    "nameTest",
 		Age:     20,
+		Email:   "test@test.com",
 	}
 
 	t.Run("success", func(t *testing.T) {
