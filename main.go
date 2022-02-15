@@ -27,22 +27,6 @@ const (
 	defaultGrpcPort        = ":8080"
 )
 
-type Transport struct {
-	Car
-}
-
-type Car struct {
-	velocity int
-}
-
-func (c *Car) Run() {
-	fmt.Println("Car is running")
-}
-
-func (t *Transport) Run() {
-	fmt.Println("Transport is running")
-}
-
 func main() {
 
 	var (
