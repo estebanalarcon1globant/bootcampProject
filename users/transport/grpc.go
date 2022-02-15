@@ -1,13 +1,16 @@
 package transport
 
 import (
+	"bootcampProject/config"
 	pb "bootcampProject/proto"
 	"bootcampProject/users/domain"
 	"context"
 	"errors"
+	kitjwt "github.com/go-kit/kit/auth/jwt"
 	"github.com/go-kit/kit/log"
 	"github.com/go-kit/kit/transport"
 	gt "github.com/go-kit/kit/transport/grpc"
+	"github.com/golang-jwt/jwt/v4"
 )
 
 type gRPCServer struct {
@@ -23,8 +26,15 @@ var (
 
 // NewUserGRPCServer initializes a new gRPC server
 func NewUserGRPCServer(svcEndpoints UserEndpointsGRPC, logger log.Logger) pb.UserServiceServer {
+
+	key := []byte(config.GetJwtSecret())
+	keys := func(token *jwt.Token) (interface{}, error) {
+		return key, nil
+	}
+
 	opts := []gt.ServerOption{
 		gt.ServerErrorHandler(transport.NewLogErrorHandler(logger)),
+		gt.ServerBefore(kitjwt.GRPCToContext()),
 		//kithttp.ServerErrorEncoder(encodeError),
 	}
 
@@ -36,7 +46,7 @@ func NewUserGRPCServer(svcEndpoints UserEndpointsGRPC, logger log.Logger) pb.Use
 			opts...,
 		),
 		getUsers: gt.NewServer(
-			svcEndpoints.GetUsers,
+			kitjwt.NewParser(keys, jwt.SigningMethodHS256, kitjwt.StandardClaimsFactory)(svcEndpoints.GetUsers),
 			decodeGetUsersGRPCRequest,
 			encodeGetUsersGRPCResponse,
 			opts...,
