@@ -82,12 +82,16 @@ func (s *userService) Authenticate(ctx context.Context, auth domain.Auth) (strin
 	// retrieve user with pwd from database
 	user, err := s.GetUserByEmail(ctx, auth.Email)
 	if err != nil {
-		return "", err
+		if err.Error() == utils.ErrRecordNotFound.Error() {
+			return "", utils.ErrInvalidCredentials
+		} else {
+			return "", err
+		}
 	}
 
 	// verify password
 	if user.PwdHash != utils.HashSHA256(auth.Password) {
-		return "", errors.New("invalid credentials")
+		return "", utils.ErrInvalidCredentials
 	}
 	//create TOKEN
 	token, err := s.tokenGenerator.GenerateToken(auth.Email)

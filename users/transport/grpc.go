@@ -4,8 +4,8 @@ import (
 	"bootcampProject/config"
 	pb "bootcampProject/proto"
 	"bootcampProject/users/domain"
+	"bootcampProject/utils"
 	"context"
-	"errors"
 	kitjwt "github.com/go-kit/kit/auth/jwt"
 	"github.com/go-kit/kit/log"
 	"github.com/go-kit/kit/transport"
@@ -20,10 +20,6 @@ type gRPCServer struct {
 	authenticate gt.Handler
 }
 
-var (
-	ErrBadRequest = errors.New("bad request. Doesn't match interface")
-)
-
 // NewUserGRPCServer initializes a new gRPC server
 func NewUserGRPCServer(svcEndpoints UserEndpointsGRPC, logger log.Logger) pb.UserServiceServer {
 
@@ -35,7 +31,7 @@ func NewUserGRPCServer(svcEndpoints UserEndpointsGRPC, logger log.Logger) pb.Use
 	opts := []gt.ServerOption{
 		gt.ServerErrorHandler(transport.NewLogErrorHandler(logger)),
 		gt.ServerBefore(kitjwt.GRPCToContext()),
-		//kithttp.ServerErrorEncoder(encodeError),
+		gt.ServerAfter(),
 	}
 
 	return &gRPCServer{
@@ -78,7 +74,7 @@ func decodeCreateUserGRPCRequest(_ context.Context, request interface{}) (interf
 			Email:   req.GetEmail(),
 		}}, nil
 	}
-	return CreateUserRequest{}, ErrBadRequest
+	return CreateUserRequest{}, utils.ErrBadRequest
 }
 
 func encodeCreateUserGRPCResponse(_ context.Context, response interface{}) (interface{}, error) {
@@ -88,7 +84,7 @@ func encodeCreateUserGRPCResponse(_ context.Context, response interface{}) (inte
 			Email: resp.Email,
 		}, resp.Err
 	}
-	return &pb.CreateUserResp{Error: ErrBadRequest.Error()}, ErrBadRequest
+	return &pb.CreateUserResp{Error: utils.ErrBadRequest.Error()}, utils.ErrBadRequest
 }
 
 func (s *gRPCServer) GetUsers(ctx context.Context, req *pb.GetUsersReq) (*pb.GetUsersResp, error) {
@@ -106,7 +102,7 @@ func decodeGetUsersGRPCRequest(_ context.Context, request interface{}) (interfac
 			offset: int(req.Offset),
 		}, nil
 	}
-	return GetUsersRequest{}, ErrBadRequest
+	return GetUsersRequest{}, utils.ErrBadRequest
 }
 
 func encodeGetUsersGRPCResponse(_ context.Context, response interface{}) (interface{}, error) {
@@ -127,7 +123,7 @@ func encodeGetUsersGRPCResponse(_ context.Context, response interface{}) (interf
 			}(resp.Users),
 		}, nil
 	}
-	return &pb.User{}, ErrBadRequest
+	return &pb.User{}, utils.ErrBadRequest
 }
 
 func (s *gRPCServer) Authenticate(ctx context.Context, req *pb.AuthReq) (*pb.AuthResp, error) {
@@ -145,12 +141,12 @@ func decodeAuthenticateGRPCRequest(_ context.Context, request interface{}) (inte
 			Password: req.GetPassword(),
 		}, nil
 	}
-	return domain.Auth{}, ErrBadRequest
+	return domain.Auth{}, utils.ErrBadRequest
 }
 
 func encodeAuthenticateGRPCResponse(_ context.Context, response interface{}) (interface{}, error) {
 	if resp, ok := response.(AuthResponse); ok {
 		return &pb.AuthResp{Token: resp.Token}, nil
 	}
-	return &pb.AuthResp{}, ErrBadRequest
+	return &pb.AuthResp{}, utils.ErrBadRequest
 }
