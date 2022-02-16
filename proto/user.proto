@@ -1,0 +1,66 @@
+syntax = "proto3";
+
+package grpc;
+
+import "google/api/annotations.proto";
+
+option go_package = "github.com/estebanalarcon1globant/bootcampProject/proto";
+
+service UserService {
+  rpc CreateUser (CreateUserReq) returns (CreateUserResp) {
+    option (google.api.http) = {
+      post: "/v1/users"
+      body: "*"
+    };
+  }
+  rpc GetUsers (GetUsersReq) returns (GetUsersResp) {
+    option (google.api.http) = {
+      get: "/v1/users"
+      };
+  }
+
+  rpc Authenticate (AuthReq) returns (AuthResp) {
+    option (google.api.http) = {
+      post: "/v1/login"
+      body: "*"
+    };
+  }
+}
+
+message CreateUserReq {
+  string pwd_hash = 1;
+  string name = 3;
+  int32 age = 5;
+  string email = 7;
+}
+
+message CreateUserResp {
+  int32 id = 1;
+  string email = 3;
+  string error = 5;
+}
+
+message User {
+  int32 id = 1;
+  string name = 3;
+  int32 age = 5;
+  string email = 7;
+}
+
+message GetUsersReq {
+  int32 limit = 1;
+  int32 offset = 3;
+}
+
+message GetUsersResp {
+  repeated User users = 1;
+}
+
+message AuthReq {
+  string email = 1;
+  string password = 3;
+}
+
+message AuthResp {
+  string token = 1;
+}

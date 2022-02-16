@@ -1,7 +1,7 @@
 package transport
 
 import (
-	pb "bootcampProject/grpc"
+	pb "bootcampProject/proto"
 	"bootcampProject/users/domain"
 	"bootcampProject/users/mocks"
 	"context"
@@ -17,9 +17,61 @@ var (
 	ErrTesting = errors.New("error testing")
 )
 
+func TestDecodeAuthenticateGRPCRequest(t *testing.T) {
+	t.Run("success", func(t *testing.T) {
+		emailTest := "test@test.com"
+		passwordTest := "test"
+
+		decodeIn := &pb.AuthReq{
+			Email:    emailTest,
+			Password: passwordTest,
+		}
+
+		resWant := &domain.Auth{
+			Email:    emailTest,
+			Password: passwordTest,
+		}
+
+		resGot, errGot := decodeAuthenticateGRPCRequest(context.TODO(), decodeIn)
+		assert.NoError(t, errGot)
+		assert.Equal(t, resWant, resGot)
+	})
+
+	t.Run("error in request: doesn't match interface", func(t *testing.T) {
+		decodeError := &pb.User{
+			Name: "nameTest",
+			Age:  20,
+		}
+		_, errGot := decodeAuthenticateGRPCRequest(context.TODO(), decodeError)
+		assert.EqualError(t, errGot, ErrBadRequest.Error())
+	})
+}
+
+func TestEncodeAuthenticateGRPCResponse(t *testing.T) {
+	t.Run("success", func(t *testing.T) {
+		token := "token"
+		encodeIn := AuthResponse{Token: token}
+		resWant := &pb.AuthResp{Token: token}
+
+		resGot, errGot := encodeAuthenticateGRPCResponse(context.TODO(), encodeIn)
+		assert.NoError(t, errGot)
+		assert.Equal(t, resWant, resGot)
+	})
+
+	t.Run("error in request", func(t *testing.T) {
+		encodeError := &pb.CreateUserResp{
+			Id:    1,
+			Email: "test@test.com",
+			Error: "",
+		}
+		_, errGot := encodeAuthenticateGRPCResponse(context.TODO(), encodeError)
+		assert.EqualError(t, errGot, ErrBadRequest.Error())
+	})
+}
+
 func TestDecodeCreateUserGRPCRequest(t *testing.T) {
 	t.Run("success", func(t *testing.T) {
-		decodeIn := &pb.NewUser{
+		decodeIn := &pb.CreateUserReq{
 			PwdHash: "test",
 			Name:    "nameTest",
 			Age:     20,
@@ -36,9 +88,8 @@ func TestDecodeCreateUserGRPCRequest(t *testing.T) {
 
 	t.Run("error on request", func(t *testing.T) {
 		decodeError := &pb.User{
-			PwdHash: "test",
-			Name:    "nameTest",
-			Age:     20,
+			Name: "nameTest",
+			Age:  20,
 		}
 		_, errGot := decodeCreateUserGRPCRequest(context.TODO(), decodeError)
 		assert.EqualError(t, errGot, ErrBadRequest.Error())
@@ -52,7 +103,7 @@ func TestEncodeCreateUserGRPCResponse(t *testing.T) {
 			ID:  expectedId,
 			Err: nil,
 		}
-		resWant := &pb.User{
+		resWant := &pb.CreateUserResp{
 			Id: int32(expectedId),
 		}
 		resGot, errGot := encodeCreateUserGRPCResponse(context.TODO(), encodeIn)
@@ -61,10 +112,10 @@ func TestEncodeCreateUserGRPCResponse(t *testing.T) {
 	})
 
 	t.Run("error on request", func(t *testing.T) {
-		encodeError := &pb.User{
-			PwdHash: "test",
-			Name:    "nameTest",
-			Age:     20,
+		encodeError := &pb.CreateUserResp{
+			Id:    1,
+			Email: "test@test.com",
+			Error: "",
 		}
 		_, errGot := encodeCreateUserGRPCResponse(context.TODO(), encodeError)
 		assert.EqualError(t, errGot, ErrBadRequest.Error())
@@ -79,16 +130,17 @@ func TestGRPCServer_CreateUser(t *testing.T) {
 	logger = log.NewLogfmtLogger(os.Stderr)
 	grpcServer := NewUserGRPCServer(endpointsGRPC, logger)
 
-	userMock := &pb.NewUser{
+	userMock := &pb.CreateUserReq{
 		PwdHash: "test",
 		Name:    "nameTest",
 		Age:     20,
+		Email:   "test@test.com",
 	}
 
 	t.Run("success", func(t *testing.T) {
 		tempUserMock := userMock
 		idExpected := 1
-		resWant := &pb.User{
+		resWant := &pb.CreateUserResp{
 			Id: int32(idExpected),
 		}
 		userSvcMock.On("CreateUser", mock.Anything, mock.AnythingOfType("domain.Users")).
@@ -115,7 +167,7 @@ func TestGRPCServer_CreateUser(t *testing.T) {
 func TestDecodeGetUsersRequest(t *testing.T) {
 	t.Run("success", func(t *testing.T) {
 		limit, offset := 10, 0
-		decodeIn := &pb.GetUsersParams{
+		decodeIn := &pb.GetUsersReq{
 			Limit:  int32(limit),
 			Offset: int32(offset),
 		}
@@ -155,19 +207,17 @@ func TestEncodeGetUsersResponse(t *testing.T) {
 			},
 			Err: nil,
 		}
-		resWant := &pb.UserList{
+		resWant := &pb.GetUsersResp{
 			Users: []*pb.User{
 				{
-					Id:      int32(encodeIn.Users[0].ID),
-					PwdHash: encodeIn.Users[0].PwdHash,
-					Name:    encodeIn.Users[0].Name,
-					Age:     int32(encodeIn.Users[0].Age),
+					Id:   int32(encodeIn.Users[0].ID),
+					Name: encodeIn.Users[0].Name,
+					Age:  int32(encodeIn.Users[0].Age),
 				},
 				{
-					Id:      int32(encodeIn.Users[1].ID),
-					PwdHash: encodeIn.Users[1].PwdHash,
-					Name:    encodeIn.Users[1].Name,
-					Age:     int32(encodeIn.Users[1].Age),
+					Id:   int32(encodeIn.Users[1].ID),
+					Name: encodeIn.Users[1].Name,
+					Age:  int32(encodeIn.Users[1].Age),
 				},
 			},
 		}
@@ -180,9 +230,8 @@ func TestEncodeGetUsersResponse(t *testing.T) {
 
 	t.Run("error on request", func(t *testing.T) {
 		encodeError := &pb.User{
-			PwdHash: "test",
-			Name:    "nameTest",
-			Age:     20,
+			Name: "nameTest",
+			Age:  20,
 		}
 		_, errGot := encodeGetUsersGRPCResponse(context.TODO(), encodeError)
 		assert.EqualError(t, errGot, ErrBadRequest.Error())

@@ -48,6 +48,24 @@ func (mw *userServiceLogging) GetUsers(ctx context.Context, limit int, offset in
 	return
 }
 
+func (mw *userServiceLogging) GetUserByEmail(ctx context.Context, email string) (output domain.Users, err error) {
+	return domain.Users{}, nil
+}
+
+func (mw *userServiceLogging) Authenticate(ctx context.Context, auth domain.Auth) (output string, err error) {
+	defer func(begin time.Time) {
+		mw.logger.Log(
+			"method", "Authenticate",
+			"email", auth.Email,
+			"output", getStringFromStruct(output),
+			"err", err,
+			"took", time.Since(begin),
+		)
+	}(time.Now())
+	output, err = mw.next.Authenticate(ctx, auth)
+	return
+}
+
 func getStringFromStruct(entity interface{}) string {
 	return fmt.Sprintf("%#v", entity)
 }

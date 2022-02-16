@@ -5,7 +5,7 @@ services:
   app:
     build: .
     ports:
-      - "8080:8080"
+      - "8090:8090"
     restart: on-failure
     volumes:
       - .:/app #working directory of container

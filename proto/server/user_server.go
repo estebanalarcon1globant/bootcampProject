@@ -1,13 +1,6 @@
 package server
 
-import (
-	pb "bootcampProject/grpc"
-	"context"
-	"google.golang.org/grpc"
-	"log"
-	"net"
-)
-
+/*
 const (
 	port = ":50051"
 )
@@ -39,4 +32,4 @@ func (s *UserServer) CreateUser(ctx context.Context, in *pb.NewUser) (*pb.User, 
 	return &pb.User{
 		Name: in.GetName(), Age: in.GetAge(), Id: 11,
 	}, nil
-}
+}*/
