@@ -54,7 +54,7 @@ func NewUserService(rep domain.UserRepository, tokenGen domain.TokenGenerator) d
 func (s *userService) CreateUser(ctx context.Context, user domain.Users) (int, error) {
 	user.PwdHash = utils.HashSHA256(user.PwdHash)
 	userTemp, err := s.userRepository.GetUserByEmail(ctx, user.Email)
-	if err != nil {
+	if err.Error() != utils.ErrRecordNotFound.Error() {
 		return 0, err
 	}
 
