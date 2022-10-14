@@ -68,14 +68,13 @@ func (s *gRPCServer) CreateUser(ctx context.Context, req *pb.CreateUserReq) (*pb
 func decodeCreateUserGRPCRequest(_ context.Context, request interface{}) (interface{}, error) {
 	if req, ok := request.(*pb.CreateUserReq); ok {
 		return CreateUserRequest{User: domain.Users{
-			PwdHash:        req.GetPwdHash(),
-			Name:           req.GetName(),
-			Age:            int(req.GetAge()),
-			Email:          req.GetEmail(),
-			AdditionalInfo: req.GetAdditionalInfo(),
+			PwdHash: req.GetPwdHash(),
+			Name:    req.GetName(),
+			Age:     int(req.GetAge()),
+			Email:   req.GetEmail(),
 		}}, nil
 	}
-	return CreateUserRequest{}, utils.NewErrBadRequest()
+	return CreateUserRequest{}, utils.ErrBadRequest
 }
 
 func encodeCreateUserGRPCResponse(_ context.Context, response interface{}) (interface{}, error) {
@@ -85,7 +84,7 @@ func encodeCreateUserGRPCResponse(_ context.Context, response interface{}) (inte
 			Email: resp.Email,
 		}, resp.Err
 	}
-	return &pb.CreateUserResp{Error: utils.NewErrBadRequest().Error()}, utils.NewErrBadRequest()
+	return &pb.CreateUserResp{Error: utils.ErrBadRequest.Error()}, utils.ErrBadRequest
 }
 
 func (s *gRPCServer) GetUsers(ctx context.Context, req *pb.GetUsersReq) (*pb.GetUsersResp, error) {
@@ -103,7 +102,7 @@ func decodeGetUsersGRPCRequest(_ context.Context, request interface{}) (interfac
 			offset: int(req.Offset),
 		}, nil
 	}
-	return GetUsersRequest{}, utils.NewErrBadRequest()
+	return GetUsersRequest{}, utils.ErrBadRequest
 }
 
 func encodeGetUsersGRPCResponse(_ context.Context, response interface{}) (interface{}, error) {
@@ -124,7 +123,7 @@ func encodeGetUsersGRPCResponse(_ context.Context, response interface{}) (interf
 			}(resp.Users),
 		}, nil
 	}
-	return &pb.User{}, utils.NewErrBadRequest()
+	return &pb.User{}, utils.ErrBadRequest
 }
 
 func (s *gRPCServer) Authenticate(ctx context.Context, req *pb.AuthReq) (*pb.AuthResp, error) {
@@ -142,12 +141,12 @@ func decodeAuthenticateGRPCRequest(_ context.Context, request interface{}) (inte
 			Password: req.GetPassword(),
 		}, nil
 	}
-	return domain.Auth{}, utils.NewErrBadRequest()
+	return domain.Auth{}, utils.ErrBadRequest
 }
 
 func encodeAuthenticateGRPCResponse(_ context.Context, response interface{}) (interface{}, error) {
 	if resp, ok := response.(AuthResponse); ok {
-		return &pb.AuthResp{Token: resp.Token, Err: &resp.Err}, nil
+		return &pb.AuthResp{Token: resp.Token}, nil
 	}
-	return &pb.AuthResp{}, utils.NewErrBadRequest()
+	return &pb.AuthResp{}, utils.ErrBadRequest
 }

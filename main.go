@@ -68,17 +68,9 @@ func main() {
 
 	var userSvc domain.UserService
 
-	addInfoClient, err := service.NewAdditionalInformationClient("localhost:9080")
-	if err != nil {
-		level.Info(logger).Log("during", "creating Additional Info Client", "err", err)
-		os.Exit(1)
-	}
-	defer addInfoClient.Close()
-
 	tokenGenerator := service.NewTokenGenerator()
-	userSvc = service.NewUserService(userRepo, tokenGenerator, addInfoClient)
+	userSvc = service.NewUserService(userRepo, tokenGenerator)
 	userSvc = service.NewUserServiceLogging(log.With(logger, "component", "users"), userSvc)
-	//create additionalInfo client
 
 	//GRPC SERVER
 	endpointsGRPC := transport.MakeEndpointsGRPC(userSvc)
@@ -115,10 +107,7 @@ func main() {
 		os.Exit(1)
 	}
 
-	responseModifier := transport.MakeHTTPResponseModifier()
-	gwMux := runtime.NewServeMux(
-		runtime.WithForwardResponseOption(responseModifier),
-	)
+	gwMux := runtime.NewServeMux()
 	// Register User Handler
 	err = pb.RegisterUserServiceHandler(context.Background(), gwMux, conn)
 	if err != nil {

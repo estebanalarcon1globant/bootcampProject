@@ -41,5 +41,4 @@ type GetUsersResponse struct {
 
 type AuthResponse struct {
 	Token string `json:"token"`
-	Err   string `json:"error,omitempty"`
 }

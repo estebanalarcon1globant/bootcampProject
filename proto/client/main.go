@@ -1,14 +1,6 @@
-/*package main
+package main
 
-
-import (
-	pb "bootcampProject/proto"
-	"context"
-	"google.golang.org/grpc"
-	"log"
-	"time"
-)
-
+/*
 const (
 	address = "localhost:50051"
 )
@@ -37,5 +29,4 @@ func main() {
 					AGE: %d
 					ID: %d`, r.GetName(), r.GetAge(), r.GetId())
 	}
-}
-*/
+}*/

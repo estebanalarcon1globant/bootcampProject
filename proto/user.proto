@@ -1,5 +1,5 @@
 syntax = "proto3";
-//https://www.vinsguru.com/grpc-error-handling/
+
 package grpc;
 
 import "google/api/annotations.proto";
@@ -32,7 +32,6 @@ message CreateUserReq {
   string name = 3;
   int32 age = 5;
   string email = 7;
-  string additional_info = 9;
 }
 
 message CreateUserResp {
@@ -64,5 +63,4 @@ message AuthReq {
 
 message AuthResp {
   string token = 1;
-  optional string err = 3;
 }

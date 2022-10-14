@@ -4,7 +4,6 @@ import (
 	pb "bootcampProject/proto"
 	"bootcampProject/users/domain"
 	"bootcampProject/users/mocks"
-	"bootcampProject/utils"
 	"context"
 	"errors"
 	"github.com/go-kit/kit/log"
@@ -28,7 +27,7 @@ func TestDecodeAuthenticateGRPCRequest(t *testing.T) {
 			Password: passwordTest,
 		}
 
-		resWant := domain.Auth{
+		resWant := &domain.Auth{
 			Email:    emailTest,
 			Password: passwordTest,
 		}
@@ -44,7 +43,7 @@ func TestDecodeAuthenticateGRPCRequest(t *testing.T) {
 			Age:  20,
 		}
 		_, errGot := decodeAuthenticateGRPCRequest(context.TODO(), decodeError)
-		assert.EqualError(t, errGot, utils.ErrBadRequest.Error())
+		assert.EqualError(t, errGot, ErrBadRequest.Error())
 	})
 }
 
@@ -66,7 +65,7 @@ func TestEncodeAuthenticateGRPCResponse(t *testing.T) {
 			Error: "",
 		}
 		_, errGot := encodeAuthenticateGRPCResponse(context.TODO(), encodeError)
-		assert.EqualError(t, errGot, utils.ErrBadRequest.Error())
+		assert.EqualError(t, errGot, ErrBadRequest.Error())
 	})
 }
 
@@ -93,7 +92,7 @@ func TestDecodeCreateUserGRPCRequest(t *testing.T) {
 			Age:  20,
 		}
 		_, errGot := decodeCreateUserGRPCRequest(context.TODO(), decodeError)
-		assert.EqualError(t, errGot, utils.ErrBadRequest.Error())
+		assert.EqualError(t, errGot, ErrBadRequest.Error())
 	})
 }
 
@@ -119,7 +118,7 @@ func TestEncodeCreateUserGRPCResponse(t *testing.T) {
 			Error: "",
 		}
 		_, errGot := encodeCreateUserGRPCResponse(context.TODO(), encodeError)
-		assert.EqualError(t, errGot, utils.ErrBadRequest.Error())
+		assert.EqualError(t, errGot, ErrBadRequest.Error())
 	})
 }
 
@@ -185,7 +184,7 @@ func TestDecodeGetUsersRequest(t *testing.T) {
 	t.Run("error on request", func(t *testing.T) {
 		decodeError := &pb.User{}
 		_, errGot := decodeGetUsersGRPCRequest(context.TODO(), decodeError)
-		assert.EqualError(t, errGot, utils.ErrBadRequest.Error())
+		assert.EqualError(t, errGot, ErrBadRequest.Error())
 	})
 }
 
@@ -235,6 +234,6 @@ func TestEncodeGetUsersResponse(t *testing.T) {
 			Age:  20,
 		}
 		_, errGot := encodeGetUsersGRPCResponse(context.TODO(), encodeError)
-		assert.EqualError(t, errGot, utils.ErrBadRequest.Error())
+		assert.EqualError(t, errGot, ErrBadRequest.Error())
 	})
 }
