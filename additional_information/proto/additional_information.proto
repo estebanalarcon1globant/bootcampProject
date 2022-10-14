@@ -1,0 +1,20 @@
+syntax = "proto3";
+//https://www.vinsguru.com/grpc-error-handling/
+package grpc;
+
+option go_package = "github.com/estebanalarcon1globant/bootcampProject/additional_information/proto";
+
+service AdditionalInformationService {
+  rpc CreateAdditionalInfo (CreateAdditionalInfoReq) returns (CreateAdditionalInfoResp){}
+}
+
+message CreateAdditionalInfoReq {
+  int32 user_id = 1;
+  string additional_info = 3;
+}
+
+message CreateAdditionalInfoResp {
+  int32 id = 1;
+  string message = 3;
+  string error = 5;
+}

@@ -1,6 +1,7 @@
 package service
 
 import (
+	pb "bootcampProject/additional_information/proto"
 	"bootcampProject/config"
 	"bootcampProject/users/domain"
 	"bootcampProject/utils"
@@ -38,20 +39,22 @@ func (gen *tokenGenerator) GenerateToken(email string) (string, error) {
 }
 
 type userService struct {
-	userRepository domain.UserRepository
-	tokenGenerator domain.TokenGenerator
+	userRepository       domain.UserRepository
+	tokenGenerator       domain.TokenGenerator
+	additionalInfoClient domain.AdditionalInformationClient
 }
 
-func NewUserService(rep domain.UserRepository, tokenGen domain.TokenGenerator) domain.UserService {
+func NewUserService(rep domain.UserRepository, tokenGen domain.TokenGenerator, addInfoClient domain.AdditionalInformationClient) domain.UserService {
 	return &userService{
-		userRepository: rep,
-		tokenGenerator: tokenGen,
+		userRepository:       rep,
+		tokenGenerator:       tokenGen,
+		additionalInfoClient: addInfoClient,
 	}
-	//return userServiceLogging{logger, userSvc}
 }
 
 // CreateUser Create User persistent
 func (s *userService) CreateUser(ctx context.Context, user domain.Users) (int, error) {
+
 	user.PwdHash = utils.HashSHA256(user.PwdHash)
 	userTemp, err := s.userRepository.GetUserByEmail(ctx, user.Email)
 	if err != nil {
@@ -64,7 +67,12 @@ func (s *userService) CreateUser(ctx context.Context, user domain.Users) (int, e
 		return 0, ErrUserAlreadyExists
 	}
 
-	return s.userRepository.CreateUser(ctx, user)
+	userID, err := s.userRepository.CreateUser(ctx, user)
+	_, err = s.additionalInfoClient.CreateAdditionalInfo(ctx, &pb.CreateAdditionalInfoReq{
+		UserId:         int32(userID),
+		AdditionalInfo: user.AdditionalInfo,
+	})
+	return userID, err
 }
 
 func (s *userService) GetUsers(ctx context.Context, limit int, offset int) ([]domain.Users, error) {
@@ -78,14 +86,14 @@ func (s *userService) GetUserByEmail(ctx context.Context, email string) (domain.
 func (s *userService) Authenticate(ctx context.Context, auth domain.Auth) (string, error) {
 	// Check for any empty fields
 	if utils.CheckEmptyField(auth) {
-		return "", errors.New("invalid fields")
+		return "", utils.NewErrBadRequest()
 	}
 
 	// retrieve user with pwd from database
 	user, err := s.GetUserByEmail(ctx, auth.Email)
 	if err != nil {
 		if err.Error() == utils.ErrRecordNotFound.Error() {
-			return "", utils.ErrInvalidCredentials
+			return "", utils.NewErrInvalidCredentials()
 		} else {
 			return "", err
 		}
@@ -93,7 +101,7 @@ func (s *userService) Authenticate(ctx context.Context, auth domain.Auth) (strin
 
 	// verify password
 	if user.PwdHash != utils.HashSHA256(auth.Password) {
-		return "", utils.ErrInvalidCredentials
+		return "", utils.NewErrInvalidCredentials()
 	}
 	//create TOKEN
 	token, err := s.tokenGenerator.GenerateToken(auth.Email)
